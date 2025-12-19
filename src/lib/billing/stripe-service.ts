@@ -1,0 +1,168 @@
+/**
+ * Stripe Billing Service
+ *
+ * Handles all Stripe API interactions for billing operations.
+ */
+
+import "server-only";
+import Stripe from "stripe";
+import { env } from "@/lib/env";
+import {
+  BillingError,
+  StripeConfigError,
+  WebhookVerificationError,
+} from "./errors";
+import type { CheckoutSessionResponse, PortalSessionResponse } from "./types";
+
+/**
+ * Stripe Service
+ *
+ * Provides methods for:
+ * - Creating checkout sessions
+ * - Creating customer portal sessions
+ * - Verifying webhook signatures
+ * - Processing webhook events
+ */
+export class StripeBillingService {
+  private stripe: Stripe;
+
+  constructor() {
+    if (!env.STRIPE_SECRET_KEY) {
+      throw new StripeConfigError(
+        "STRIPE_SECRET_KEY is not configured. Please set it in your environment variables."
+      );
+    }
+
+    this.stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-12-15.clover",
+      typescript: true,
+    });
+  }
+
+  /**
+   * Create Checkout Session
+   *
+   * Creates a Stripe Checkout Session for upgrading to PREMIUM plan.
+   *
+   * @param userId - User ID to associate with the subscription
+   * @param userEmail - User email for pre-filling checkout
+   * @param existingCustomerId - Optional existing Stripe customer ID
+   * @returns Checkout session URL
+   */
+  async createCheckoutSession(
+    userId: string,
+    userEmail: string,
+    existingCustomerId?: string | null
+  ): Promise<CheckoutSessionResponse> {
+    if (!env.STRIPE_PREMIUM_PRICE_ID) {
+      throw new StripeConfigError(
+        "STRIPE_PREMIUM_PRICE_ID is not configured. Please set it in your environment variables."
+      );
+    }
+
+    const successUrl = `${env.NEXT_PUBLIC_SITE_URL}${env.BILLING_CHECKOUT_SUCCESS_PATH}?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${env.NEXT_PUBLIC_SITE_URL}${env.BILLING_CHECKOUT_CANCEL_PATH}`;
+
+    try {
+      const sessionParams: Stripe.Checkout.SessionCreateParams = {
+        mode: "subscription",
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price: env.STRIPE_PREMIUM_PRICE_ID,
+            quantity: 1,
+          },
+        ],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          userId,
+        },
+        subscription_data: {
+          metadata: {
+            userId,
+          },
+        },
+      };
+
+      // Use existing customer or create new one
+      if (existingCustomerId) {
+        sessionParams.customer = existingCustomerId;
+      } else {
+        sessionParams.customer_email = userEmail;
+      }
+
+      const session = await this.stripe.checkout.sessions.create(sessionParams);
+
+      if (!session.url) {
+        throw new BillingError("Failed to create checkout session URL");
+      }
+
+      return { url: session.url };
+    } catch (error) {
+      if (error instanceof BillingError) {
+        throw error;
+      }
+
+      const message = error instanceof Error ? error.message : "Unknown error";
+      throw new BillingError(`Failed to create checkout session: ${message}`);
+    }
+  }
+
+  /**
+   * Create Customer Portal Session
+   *
+   * Creates a Stripe Customer Portal Session for managing subscription.
+   *
+   * @param stripeCustomerId - Stripe customer ID
+   * @returns Portal session URL
+   */
+  async createPortalSession(
+    stripeCustomerId: string
+  ): Promise<PortalSessionResponse> {
+    const returnUrl = `${env.NEXT_PUBLIC_SITE_URL}${env.BILLING_PORTAL_RETURN_PATH}`;
+
+    try {
+      const session = await this.stripe.billingPortal.sessions.create({
+        customer: stripeCustomerId,
+        return_url: returnUrl,
+      });
+
+      return { url: session.url };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      throw new BillingError(`Failed to create portal session: ${message}`);
+    }
+  }
+
+  /**
+   * Verify Webhook Signature
+   *
+   * Verifies that a webhook event came from Stripe.
+   *
+   * @param payload - Raw request body
+   * @param signature - Stripe signature header
+   * @returns Verified Stripe event
+   */
+  verifyWebhookSignature(payload: string, signature: string): Stripe.Event {
+    if (!env.STRIPE_WEBHOOK_SECRET) {
+      throw new StripeConfigError(
+        "STRIPE_WEBHOOK_SECRET is not configured. Please set it in your environment variables."
+      );
+    }
+
+    try {
+      return this.stripe.webhooks.constructEvent(
+        payload,
+        signature,
+        env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Invalid signature";
+      throw new WebhookVerificationError(
+        `Webhook signature verification failed: ${message}`
+      );
+    }
+  }
+}
