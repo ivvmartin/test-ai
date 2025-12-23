@@ -169,7 +169,7 @@ function AiInput({
           ref={textareaRef}
           id="ai-input-06"
           placeholder={
-            disabled
+            isAtLimit
               ? "Лимитът за използване е достигнат. Надградете, за да продължите."
               : "Напишете вашия въпрос за ДДС тук…"
           }
@@ -234,6 +234,9 @@ export function ChatPage() {
   const showSkeleton =
     isLoadingMessages && messages.length === 0 && dataUpdatedAt === 0;
 
+  // Check if there's a loading message (AI is thinking)
+  const hasLoadingMessage = messages.some((msg) => msg.content === "...");
+
   const createConversationMutation = useCreateConversationMutation({
     onSuccess: (newConversation) => {
       navigate(`/app/chat/${newConversation.id}`);
@@ -286,7 +289,15 @@ export function ChatPage() {
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
       e?.preventDefault();
-      if (!input.trim() || isGenerating || isStreaming || isAtLimit) return;
+      if (
+        !input.trim() ||
+        isGenerating ||
+        isStreaming ||
+        isAtLimit ||
+        isLoadingMessages ||
+        hasLoadingMessage
+      )
+        return;
 
       const userMessageContent = input.trim();
       setInput("");
@@ -328,6 +339,8 @@ export function ChatPage() {
       navigate,
       sendMessage,
       isAtLimit,
+      isLoadingMessages,
+      hasLoadingMessage,
     ]
   );
 
@@ -335,10 +348,25 @@ export function ChatPage() {
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
-        handleSubmit();
+        if (
+          !isGenerating &&
+          !isStreaming &&
+          !isAtLimit &&
+          !isLoadingMessages &&
+          !hasLoadingMessage
+        ) {
+          handleSubmit();
+        }
       }
     },
-    [handleSubmit]
+    [
+      handleSubmit,
+      isGenerating,
+      isStreaming,
+      isAtLimit,
+      isLoadingMessages,
+      hasLoadingMessage,
+    ]
   );
 
   if (!conversationId) {
@@ -425,7 +453,13 @@ export function ChatPage() {
           onChange={(e) => setInput(e.target.value)}
           onSubmit={handleSubmit}
           onKeyDown={handleKeyDown}
-          disabled={isAtLimit}
+          disabled={
+            isAtLimit ||
+            isGenerating ||
+            isStreaming ||
+            isLoadingMessages ||
+            hasLoadingMessage
+          }
           isNearLimit={isNearLimit}
           isAtLimit={isAtLimit}
           usage={
