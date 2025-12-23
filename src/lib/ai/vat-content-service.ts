@@ -44,7 +44,7 @@ class VATContentService {
       // 1. Use RPC to call PostgreSQL full-text search directly
       const { data, error } = await supabase.rpc("search_vat_content", {
         search_query: searchQuery,
-        max_results: 0,
+        max_results: 20,
       });
 
       console.log("🔍 [Search Result]", {
