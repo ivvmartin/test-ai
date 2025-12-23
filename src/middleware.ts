@@ -54,7 +54,7 @@ export async function middleware(request: NextRequest) {
  * - Static files (_next/static)
  * - Image optimization (_next/image)
  * - Favicon and other public files
- * - API routes that explicitly opt out
+ * - Stripe webhook endpoint (needs raw body for signature verification)
  */
 export const config = {
   matcher: [
@@ -64,7 +64,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public files (images, etc.)
+     * - /api/billing/webhook (Stripe webhook - needs raw body)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/billing/webhook|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

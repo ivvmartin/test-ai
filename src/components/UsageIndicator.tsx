@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { AlertCircle, TrendingUp, Zap } from "lucide-react";
 
-import { PLAN_METADATA } from "../types/usage.types";
 import { cn } from "../lib/utils";
+import { PLAN_METADATA } from "../types/usage.types";
 import { useUsageSnapshot } from "../utils/usage-queries";
 import { Skeleton } from "./ui/skeleton";
 
@@ -184,7 +184,7 @@ export function UsageIndicator({
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20"
+            className="flex items-start gap-2 p-3 rounded-md bg-muted/50 border border-border/50"
           >
             <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
@@ -206,14 +206,14 @@ export function UsageIndicator({
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-start gap-2 p-3 rounded-md bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900"
+            className="flex items-start gap-2 p-3 rounded-md bg-muted/50 border border-border/50"
           >
-            <TrendingUp className="h-4 w-4 text-yellow-600 dark:text-yellow-500 mt-0.5 flex-shrink-0" />
+            <TrendingUp className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
-              <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+              <p className="text-sm font-medium text-yellow-700">
                 Приближавате лимита
               </p>
-              <p className="text-xs text-yellow-600 dark:text-yellow-500">
+              <p className="text-xs text-yellow-600">
                 Помислете за надграждане, за да избегнете прекъсвания
               </p>
             </div>

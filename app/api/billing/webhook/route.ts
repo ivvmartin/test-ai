@@ -23,6 +23,21 @@ import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StripeBillingService, WebhookVerificationError } from "@/lib/billing";
 
+// Disable body parsing so we can verify the webhook signature with raw body
+export const runtime = "nodejs";
+
+// Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "stripe-signature, content-type",
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     // 1. Get raw body and signature
