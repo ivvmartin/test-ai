@@ -2,8 +2,8 @@ import { motion } from "framer-motion";
 import { Send } from "lucide-react";
 import { useRef } from "react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@components/ui/button";
-import { cn } from "@utils/index";
 
 interface ChatInputProps {
   value: string;
