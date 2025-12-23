@@ -478,40 +478,40 @@ function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-4 md:px-6">
-      <div className="flex items-center gap-2">
-        <SidebarTrigger />
-        <Separator orientation="vertical" className="h-6" />
+    <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-2 md:px-6 overflow-x-auto">
+      <div className="flex items-center gap-1.5 md:gap-2 min-w-0">
+        <SidebarTrigger className="flex-shrink-0" />
+        <Separator orientation="vertical" className="h-6 flex-shrink-0" />
         <motion.h1
           key={location.pathname}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="font-semibold text-lg"
+          className="font-semibold text-base md:text-lg whitespace-nowrap"
         >
           {getPageTitle()}
         </motion.h1>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-1 md:gap-6 flex-shrink-0 ml-2">
         {/* User Menu */}
         <DropdownMenu
           open={isProfileDropdownOpen}
           onOpenChange={setIsProfileDropdownOpen}
         >
           <DropdownMenuTrigger asChild>
-            <button className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-accent">
-              <Avatar className="size-7 bg-muted rounded-2xl">
+            <button className="flex cursor-pointer items-center gap-1 md:gap-2.5 rounded-lg px-1 md:px-2.5 py-1 md:py-1.5 transition-colors hover:bg-accent">
+              <Avatar className="size-7 bg-muted rounded-2xl flex-shrink-0">
                 <AvatarFallback className="bg-muted rounded-2xl text-xs flex items-center justify-center">
                   {user?.email.replace(/@.*$/, "")[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex flex-col items-start min-w-0">
-                <span className="text-[13px] font-medium max-w-[180px] truncate">
+              <div className="flex flex-col items-start">
+                <span className="text-xs md:text-[13px] font-medium whitespace-nowrap">
                   {user?.email || ""}
                 </span>
                 {usage && (
                   <span
-                    className="text-[11px] font-medium text-muted-foreground"
+                    className="text-[10px] md:text-[11px] font-medium text-muted-foreground whitespace-nowrap"
                     style={{ color: PLAN_METADATA[usage.planKey].color }}
                   >
                     {PLAN_METADATA[usage.planKey].name.toLocaleUpperCase()} план
