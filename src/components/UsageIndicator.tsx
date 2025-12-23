@@ -122,7 +122,7 @@ export function UsageIndicator({
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold">Употреба този месец</h3>
+          <h3 className="text-sm font-semibold">Потребление този месец</h3>
           <p className="text-xs text-muted-foreground">
             Период: {formatPeriodKey(usage.periodKey)}
           </p>

@@ -16,7 +16,6 @@ export interface VATContent {
 export interface ContextRetrievalResult {
   actContext: string; // Relevant articles from ЗДДС
   regulationsContext: string; // Relevant articles from ППЗДДС
-  foundArticles: VATContent[]; // All found articles for reference
 }
 
 export interface ConversationMessage {

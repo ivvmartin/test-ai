@@ -185,14 +185,6 @@ Add a user message and get AI response (streaming).
 - `token_count` (integer, nullable)
 - `created_at` (timestamptz)
 
-### vat_content
-
-- `id` (uuid, PK)
-- `source` (text: ЗДДС|ППЗДДС)
-- `article_number` (text)
-- `content` (text)
-- `search_vector` (tsvector) - Bulgarian full-text search
-
 ## 10-Conversation Limit
 
 Enforced automatically via PostgreSQL triggers:

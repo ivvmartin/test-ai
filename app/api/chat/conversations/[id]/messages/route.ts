@@ -180,7 +180,6 @@ export async function POST(
           );
 
           console.log("📊 [API] Context retrieval complete:", {
-            foundArticles: contextResult.foundArticles.length,
             hasActContext: !!contextResult.actContext,
             hasRegulationsContext: !!contextResult.regulationsContext,
           });

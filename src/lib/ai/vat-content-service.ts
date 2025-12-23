@@ -7942,7 +7942,6 @@ export const findRelevantContent = (
     return {
       actContext: "",
       regulationsContext: "",
-      foundArticles: [],
     };
   }
 
@@ -7973,12 +7972,11 @@ export const findRelevantContent = (
   }
 
   console.log("📊 [Context Size]", {
-    actContextLength: actContext.length,
-    regulationsContextLength: regulationsContext.length,
-    totalContextLength: actContext.length + regulationsContext.length,
+    actContext: actContext,
+    regulationsContext: regulationsContext,
   });
 
-  return { actContext, regulationsContext, foundArticles: [] };
+  return { actContext, regulationsContext };
 };
 
 class VATContentService {

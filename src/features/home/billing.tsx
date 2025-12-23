@@ -235,7 +235,7 @@ export function BillingPage() {
 
         {/* Current Usage */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-base">Текуща употреба</h3>
+          <h3 className="font-semibold text-base">Текущо потребление</h3>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
