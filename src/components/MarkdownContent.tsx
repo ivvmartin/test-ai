@@ -31,8 +31,6 @@ export const MarkdownContent = memo(({ content, className }: Props) => {
     // Lists
     "prose-ul:text-foreground prose-ol:text-foreground prose-ul:my-3 prose-ol:my-3",
     "prose-li:text-foreground prose-li:marker:text-muted-foreground prose-li:my-1",
-    // Links
-    "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
     // Code
     "prose-code:text-foreground prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none",
     "prose-pre:bg-muted prose-pre:text-foreground prose-pre:border prose-pre:border-border",
@@ -44,12 +42,8 @@ export const MarkdownContent = memo(({ content, className }: Props) => {
     "prose-tr:border-b prose-tr:border-border",
     "prose-th:text-foreground prose-th:font-semibold",
     "prose-td:text-foreground",
-    // Strong/Bold
-    "prose-strong:text-foreground prose-strong:font-semibold",
     // Emphasis/Italic
     "prose-em:text-foreground",
-    // Horizontal rules
-    "prose-hr:border-border",
     className
   );
 
@@ -60,6 +54,12 @@ export const MarkdownContent = memo(({ content, className }: Props) => {
         components={{
           a: ({ node, ...props }) => (
             <a {...props} target="_blank" rel="noopener noreferrer" />
+          ),
+          hr: ({ node, ...props }) => (
+            <hr {...props} className="my-6 border-border" />
+          ),
+          strong: ({ node, ...props }) => (
+            <strong {...props} className="font-semibold text-foreground" />
           ),
         }}
       >

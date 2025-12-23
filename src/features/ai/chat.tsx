@@ -66,7 +66,7 @@ const MessageItem = memo(
           <>
             <div
               className={cn(
-                "prose prose-sm dark:prose-invert text-foreground min-w-0 flex-1 overflow-x-auto text-sm leading-relaxed sm:text-base",
+                "text-foreground min-w-0 flex-1 overflow-x-auto text-sm leading-relaxed sm:text-base",
                 message.content === "Нещо се обърка. Моля, опитайте отново"
                   ? "rounded-lg border border-destructive/10 bg-destructive/10 p-3"
                   : ""

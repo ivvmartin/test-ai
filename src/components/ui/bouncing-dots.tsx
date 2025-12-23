@@ -10,7 +10,7 @@ interface BouncingDotsProps {
 }
 
 const bounceTransition: Transition = {
-  duration: 0.9,
+  duration: 1.1,
   repeat: Infinity,
   repeatType: "reverse",
   ease: "easeInOut",
