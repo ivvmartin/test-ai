@@ -8,9 +8,9 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  experimental: {
-    optimizePackageImports: ["lucide-react", "framer-motion"],
-  },
+  // experimental: {
+  //   optimizePackageImports: ["lucide-react", "framer-motion"],
+  // },
 
   // Webpack configuration for compatibility
   webpack: (config) => {
