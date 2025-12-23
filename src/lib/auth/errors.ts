@@ -1,9 +1,3 @@
-/**
- * Authentication Error Types
- * 
- * Typed errors for auth operations with HTTP semantics.
- */
-
 export class UnauthorizedError extends Error {
   public readonly statusCode = 401;
   public readonly code = "UNAUTHORIZED";
@@ -27,7 +21,8 @@ export class ForbiddenError extends Error {
 /**
  * Type guard for auth errors
  */
-export function isAuthError(error: unknown): error is UnauthorizedError | ForbiddenError {
+export function isAuthError(
+  error: unknown
+): error is UnauthorizedError | ForbiddenError {
   return error instanceof UnauthorizedError || error instanceof ForbiddenError;
 }
-

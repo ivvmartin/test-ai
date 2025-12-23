@@ -1,22 +1,6 @@
-/**
- * VAT Content Seeding Script
- *
- * This script loads the Bulgarian VAT Act (ЗДДС) and its Regulations (ППЗДДС)
- * into the Supabase database for use in the AI legal consultation system.
- *
- * Usage:
- *   npx tsx scripts/seed-vat-content.ts
- *
- * Prerequisites:
- *   1. Database migration 003_chat_system.sql must be applied
- *   2. SUPABASE_SECRET_KEY must be set in .env
- *   3. VAT content must be provided in the data arrays below
- */
-
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 
-// Load environment variables from .env.local
 dotenv.config({ path: ".env.local" });
 
 export const ZDDS_CONTENT = [
@@ -2284,7 +2268,6 @@ export const PPZDDS_CONTENT = [
 async function seedVATContent() {
   console.log("🌱 Starting VAT content seeding...\n");
 
-  // Initialize Supabase client
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SECRET_KEY;
 
@@ -2298,7 +2281,6 @@ async function seedVATContent() {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
-    // Clear existing content
     console.log("🗑️  Clearing existing VAT content...");
     const { error: deleteError } = await supabase
       .from("vat_content")
@@ -2310,29 +2292,24 @@ async function seedVATContent() {
     }
     console.log("✅ Existing content cleared\n");
 
-    // Prepare ЗДДС content
     const zddsData = ZDDS_CONTENT.map((item) => ({
       source: "ЗДДС" as const,
       article_number: item.article_number,
       content: item.content,
     }));
 
-    // Prepare ППЗДДС content
     const ppzddsData = PPZDDS_CONTENT.map((item) => ({
       source: "ППЗДДС" as const,
       article_number: item.article_number,
       content: item.content,
     }));
 
-    // Combine all content
     const allContent = [...zddsData, ...ppzddsData];
 
-    // Seed content
     console.log(`📝 Seeding ${zddsData.length} ЗДДС articles...`);
     console.log(`📝 Seeding ${ppzddsData.length} ППЗДДС articles...`);
     console.log(`📝 Total: ${allContent.length} articles\n`);
 
-    // Insert in batches of 100 to avoid payload size limits
     const batchSize = 100;
     for (let i = 0; i < allContent.length; i += batchSize) {
       const batch = allContent.slice(i, i + batchSize);
@@ -2363,5 +2340,4 @@ async function seedVATContent() {
   }
 }
 
-// Run the seeding function
 seedVATContent();

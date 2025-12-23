@@ -1,8 +1,9 @@
 "use client";
 
 import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/utils/queries";
-import { useAuthInitialization } from "@/hooks/use-auth-initialization";
+
+import { useAuthInitialization } from "@utils/hooks";
+import { queryClient } from "@utils/queries";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useAuthInitialization();

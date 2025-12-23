@@ -1,10 +1,3 @@
-/**
- * Usage & Limits System - Service Layer
- *
- * Provides production-grade usage tracking and enforcement.
- * Uses Supabase for storage with atomic operations.
- */
-
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -24,7 +17,7 @@ import { LimitExceededError, UsageError } from "./errors";
 /**
  * Usage Service
  *
- * Stable API contract for usage tracking and enforcement.
+ * Stable API contract for usage tracking and enforcement
  */
 export class UsageService {
   private supabase = createAdminClient();
@@ -94,7 +87,7 @@ export class UsageService {
   /**
    * Get Usage Snapshot
    *
-   * Returns complete usage information for a user in the current period.
+   * Returns complete usage information for a user in the current period
    */
   async getUsageSnapshot(
     userId: string,
@@ -103,7 +96,6 @@ export class UsageService {
     const entitlement = await this.resolveEntitlement(userId);
     const period = getPeriodInfo(dateNow);
 
-    // Get current usage for this period
     const { data: counter, error } = await this.supabase
       .from("usage_counters")
       .select("*")

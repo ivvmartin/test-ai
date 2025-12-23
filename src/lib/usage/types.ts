@@ -1,12 +1,6 @@
-/**
- * Usage & Limits System - Type Definitions
- */
+/* =============================== PLAN TYPES =============================== */
 
-// ============================================================================
-// PLAN TYPES
-// ============================================================================
-
-export type PlanKey = 'FREE' | 'PAID' | 'INTERNAL';
+export type PlanKey = "FREE" | "PAID" | "INTERNAL";
 
 export interface PlanConfig {
   key: PlanKey;
@@ -17,31 +11,33 @@ export interface PlanConfig {
 
 export const PLANS: Record<PlanKey, PlanConfig> = {
   FREE: {
-    key: 'FREE',
+    key: "FREE",
     monthlyLimit: 10,
-    name: 'Free Plan',
-    description: 'Default plan for new users',
+    name: "Free Plan",
+    description: "Default plan for new users",
   },
   PAID: {
-    key: 'PAID',
+    key: "PAID",
     monthlyLimit: 50,
-    name: 'Paid Plan',
-    description: 'Premium plan via Stripe',
+    name: "Paid Plan",
+    description: "Premium plan via Stripe",
   },
   INTERNAL: {
-    key: 'INTERNAL',
+    key: "INTERNAL",
     monthlyLimit: 1000,
-    name: 'Internal Plan',
-    description: 'Internal/admin users',
+    name: "Internal Plan",
+    description: "Internal/admin users",
   },
 } as const;
 
-// ============================================================================
-// SUBSCRIPTION TYPES
-// ============================================================================
+/* =========================== SUBSCRIPTION TYPES =========================== */
 
-export type SubscriptionStatus = 'inactive' | 'active' | 'past_due' | 'canceled';
-export type SubscriptionProvider = 'none' | 'stripe';
+export type SubscriptionStatus =
+  | "inactive"
+  | "active"
+  | "past_due"
+  | "canceled";
+export type SubscriptionProvider = "none" | "stripe";
 
 export interface Subscription {
   id: string;
@@ -55,9 +51,7 @@ export interface Subscription {
   updatedAt: Date;
 }
 
-// ============================================================================
-// USAGE COUNTER TYPES
-// ============================================================================
+/* =========================== USAGE COUNTER TYPES ========================== */
 
 export interface UsageCounter {
   id: string;
@@ -68,24 +62,20 @@ export interface UsageCounter {
   updatedAt: Date;
 }
 
-// ============================================================================
-// USER METADATA TYPES
-// ============================================================================
+/* =========================== USER METADATA TYPES ========================== */
 
 export interface UserMetadata {
   planOverride?: PlanKey | null;
   monthlyLimitOverride?: number | null;
 }
 
-// ============================================================================
-// SERVICE RESULT TYPES
-// ============================================================================
+/* ========================== SERVICES RESULT TYPES ========================= */
 
-export type EntitlementSource = 
-  | 'user_override' 
-  | 'subscription_active' 
-  | 'subscription_inactive' 
-  | 'default_free';
+export type EntitlementSource =
+  | "user_override"
+  | "subscription_active"
+  | "subscription_inactive"
+  | "default_free";
 
 export interface EntitlementResult {
   planKey: PlanKey;
@@ -113,19 +103,13 @@ export interface ConsumeUsageResult {
   periodKey: string;
 }
 
-// ============================================================================
-// METADATA FOR FUTURE AI INTEGRATION
-// ============================================================================
-
 export interface ConsumeUsageMeta {
   conversationId?: string;
   model?: string;
   tokensEstimate?: number;
 }
 
-// ============================================================================
-// PERIOD UTILITIES
-// ============================================================================
+/* ============================ PERIOD UTILITIES ============================ */
 
 export interface PeriodInfo {
   periodKey: string;
@@ -139,15 +123,14 @@ export interface PeriodInfo {
 export function getPeriodInfo(dateNow: Date = new Date()): PeriodInfo {
   const year = dateNow.getUTCFullYear();
   const month = dateNow.getUTCMonth(); // 0-11
-  
-  const periodKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+  const periodKey = `${year}-${String(month + 1).padStart(2, "0")}`;
   const periodStart = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
   const periodEnd = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0, 0));
-  
+
   return {
     periodKey,
     periodStart,
     periodEnd,
   };
 }
-

@@ -3,7 +3,7 @@ import { env } from "@/lib/env";
 
 /**
  * Browser Supabase Client
- * 
+ *
  * For use in Client Components and browser-side code.
  * Handles authentication flows:
  * - signUp
@@ -11,8 +11,8 @@ import { env } from "@/lib/env";
  * - signOut
  * - resetPasswordForEmail
  * - updateUser
- * 
- * Uses HTTP-only cookies for session management (configured via middleware).
+ *
+ * Uses HTTP-only cookies for session management (configured via middleware)
  */
 export function createClient() {
   return createBrowserClient(
@@ -20,4 +20,3 @@ export function createClient() {
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
   );
 }
-

@@ -1,10 +1,11 @@
-# Chat API - Bulgarian VAT Legal Consultation
+# Chat API
 
 ## Overview
 
 RESTful API for AI-powered legal consultation on the Bulgarian VAT Act (ЗДДС) and its Regulations (ППЗДДС).
 
 Features:
+
 - **Conversation Management**: Create, list, and delete conversations
 - **Message Handling**: Add messages with AI-generated responses
 - **10-Conversation Limit**: Automatically enforced per user
@@ -23,6 +24,7 @@ All endpoints require authentication via HTTP-only cookies (Supabase Auth).
 List user's conversations (up to 10 most recent).
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -43,6 +45,7 @@ List user's conversations (up to 10 most recent).
 Create a new conversation.
 
 **Request Body:**
+
 ```json
 {
   "title": "Optional conversation title"
@@ -50,6 +53,7 @@ Create a new conversation.
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -68,6 +72,7 @@ Create a new conversation.
 Get all messages for a conversation.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -90,6 +95,7 @@ Get all messages for a conversation.
 Delete a conversation and all its messages.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -102,6 +108,7 @@ Delete a conversation and all its messages.
 Add a user message and get AI response (streaming).
 
 **Request Body:**
+
 ```json
 {
   "content": "User's question about VAT"
@@ -113,11 +120,13 @@ Add a user message and get AI response (streaming).
 **Event Types:**
 
 1. **Chunk Event** (multiple):
+
 ```json
-{"type": "chunk", "text": "Partial response text..."}
+{ "type": "chunk", "text": "Partial response text..." }
 ```
 
 2. **Done Event** (final):
+
 ```json
 {
   "type": "done",
@@ -130,23 +139,27 @@ Add a user message and get AI response (streaming).
 ```
 
 3. **Error Event**:
+
 ```json
-{"type": "error", "message": "Error description"}
+{ "type": "error", "message": "Error description" }
 ```
 
 ## AI Processing Flow
 
 ### Step 1: Query Analysis
+
 - Analyzes user's question in conversation context
 - Produces refined question and search keywords
 - Uses Gemini 2.0 Flash Lite (temperature: 0.1)
 
 ### Step 2: Context Retrieval
+
 - Searches VAT content using PostgreSQL full-text search
 - Bulgarian language configuration
 - Returns relevant articles from ЗДДС and ППЗДДС
 
 ### Step 3: Response Generation
+
 - Generates comprehensive legal answer
 - Uses conversation history + retrieved context
 - Streams response in real-time
@@ -155,6 +168,7 @@ Add a user message and get AI response (streaming).
 ## Database Schema
 
 ### conversations
+
 - `id` (uuid, PK)
 - `user_id` (uuid, FK → auth.users)
 - `title` (text, nullable)
@@ -162,6 +176,7 @@ Add a user message and get AI response (streaming).
 - `updated_at` (timestamptz) - auto-updated via trigger
 
 ### messages
+
 - `id` (uuid, PK)
 - `conversation_id` (uuid, FK → conversations ON DELETE CASCADE)
 - `user_id` (uuid, FK → auth.users)
@@ -171,6 +186,7 @@ Add a user message and get AI response (streaming).
 - `created_at` (timestamptz)
 
 ### vat_content
+
 - `id` (uuid, PK)
 - `source` (text: ЗДДС|ППЗДДС)
 - `article_number` (text)
@@ -180,6 +196,7 @@ Add a user message and get AI response (streaming).
 ## 10-Conversation Limit
 
 Enforced automatically via PostgreSQL triggers:
+
 - When a new conversation is created
 - When a message updates conversation recency
 
@@ -188,12 +205,14 @@ Oldest conversations (by `updated_at`) are deleted when limit is exceeded.
 ## Setup
 
 1. Apply database migration:
+
 ```bash
 # Run in Supabase Dashboard SQL Editor
 # File: supabase/migrations/003_chat_system.sql
 ```
 
 2. Set environment variable:
+
 ```bash
 GOOGLE_GEMINI_API_KEY=your_api_key_here
 ```
@@ -205,4 +224,3 @@ GOOGLE_GEMINI_API_KEY=your_api_key_here
 - [AI Service Documentation](../../../src/lib/ai/)
 - [Database Migration](../../../supabase/migrations/003_chat_system.sql)
 - [VAT Content Seeding](../../../scripts/seed-vat-content.ts)
-

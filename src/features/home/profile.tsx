@@ -1,13 +1,14 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Eye, EyeOff, LogOut, Trash2 } from "lucide-react";
-import { useState } from "react";
 import { useNavigate } from "@/lib/navigation";
-import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/browser";
 import { useAuthStore } from "@/store/auth.store";
 import { useBillingStatus } from "@/utils/billing-queries";
+import { queryClient } from "@/utils/queries";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, LogOut, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@components/ui/button";
 import {
@@ -26,6 +27,7 @@ import { Separator } from "@components/ui/separator";
 export function Profile() {
   const navigate = useNavigate();
   const supabase = createClient();
+
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const { data: billingStatus } = useBillingStatus();
 
@@ -37,25 +39,21 @@ export function Profile() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const handleLogout = async () => {
-    const loadingToast = toast.loading("Signing out...");
     setIsLoggingOut(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
-        toast.error("Failed to sign out. Please try again", {
-          id: loadingToast,
-        });
+        toast.error("Неуспешен изход. Моля, опитайте отново");
         return;
       }
       clearAuth();
-      toast.success("Signed out successfully", { id: loadingToast });
+      queryClient.clear();
+      toast.success("Излязохте успешно");
       navigate("/auth/sign-in");
     } catch (error) {
-      toast.error("Failed to sign out. Please try again", {
-        id: loadingToast,
-      });
-      // Still navigate even on error since the local state should be cleared
+      toast.error("Неуспешен изход. Моля, опитайте отново");
       clearAuth();
+      queryClient.clear();
       navigate("/auth/sign-in");
     } finally {
       setIsLoggingOut(false);
@@ -63,37 +61,32 @@ export function Profile() {
   };
 
   const handleDeleteAccount = async () => {
-    // Check if user has an active subscription
     if (
       billingStatus?.status === "active" ||
       billingStatus?.status === "trialing"
     ) {
-      toast.error(
-        "Please cancel your subscription before deleting your account",
-        {
-          description:
-            "You need to cancel your active subscription first, then try again",
-        }
+      toast.error("Абонаментът ви е активен", {
+        description:
+          "Абонаментът ви не трябва да е активен, за да изтриете акаунта си",
+      });
+      return;
+    }
+
+    if (!confirmPassword.trim()) {
+      setPasswordError(
+        "Паролата е задължителна за потвърждаване на изтриването на акаунта"
       );
       return;
     }
 
-    // Validate password is entered
-    if (!confirmPassword.trim()) {
-      setPasswordError("Password is required to confirm account deletion");
-      return;
-    }
-
     if (confirmPassword.length < 8) {
-      setPasswordError("Password must be at least 8 characters");
+      setPasswordError("Паролата трябва да бъде поне 8 символа");
       return;
     }
 
-    const loadingToast = toast.loading("Deleting your account...");
     setIsDeletingAccount(true);
 
     try {
-      // Call the account deletion API endpoint
       const response = await fetch("/api/account", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -103,34 +96,28 @@ export function Profile() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle specific error cases
         if (response.status === 403) {
-          setPasswordError("Incorrect password. Please try again");
-          toast.error("Incorrect password", { id: loadingToast });
+          setPasswordError("Неправилна парола. Моля, опитайте отново");
+          toast.error("Неправилна парола");
           return;
         }
 
-        throw new Error(data.error || "Failed to delete account");
+        throw new Error(data.error || "Неуспешно изтриване на акаунта");
       }
 
-      // Success - account deleted
-      toast.success("Your account has been permanently deleted", {
-        id: loadingToast,
-      });
+      toast.success("Вашият акаунт е изтрит окончателно");
 
-      // Close dialog and sign out
       handleDialogClose();
 
-      // Sign out and redirect to sign-in page
       await supabase.auth.signOut();
       clearAuth();
+      queryClient.clear();
       navigate("/auth/sign-in");
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to delete account. Please try again",
-        { id: loadingToast }
+          : "Неуспешно изтриване на акаунта. Моля, опитайте отново"
       );
     } finally {
       setIsDeletingAccount(false);
@@ -145,7 +132,7 @@ export function Profile() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl p-6 md:p-8">
+    <div className="mx-auto max-w-3xl p-6 md:p-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -153,9 +140,9 @@ export function Profile() {
       >
         {/* Header */}
         <div>
-          <h1 className="font-bold text-xl tracking-tight">Profile</h1>
+          <h1 className="font-bold text-xl tracking-tight">Профил</h1>
           <p className="text-muted-foreground">
-            Manage your account settings and preferences
+            Управлявайте настройките и предпочитанията на вашия акаунт
           </p>
         </div>
 
@@ -163,9 +150,9 @@ export function Profile() {
         <div className="space-y-6 mt-14">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <h3 className="font-semibold text-base">Sign out</h3>
+              <h3 className="font-semibold text-base">Изход</h3>
               <p className="text-sm text-muted-foreground">
-                You’ll need to sign in again to access your account
+                Ще трябва да влезете отново, за да получите достъп до акаунта си
               </p>
             </div>
             <Button
@@ -174,7 +161,7 @@ export function Profile() {
               className="gap-2 shrink-0"
             >
               <LogOut className="size-4" />
-              Logout
+              Изход
             </Button>
           </div>
 
@@ -182,10 +169,10 @@ export function Profile() {
 
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <h3 className="font-semibold text-base">Delete account</h3>
+              <h3 className="font-semibold text-base">Изтриване на акаунт</h3>
               <p className="text-sm text-muted-foreground">
-                This action is irreversible and will permanently delete your
-                account and all associated data
+                Това действие е необратимо и ще изтрие окончателно вашия акаунт
+                и всички свързани данни
               </p>
             </div>
             <Button
@@ -194,7 +181,7 @@ export function Profile() {
               className="gap-2 text-destructive hover:text-destructive shrink-0"
             >
               <Trash2 className="size-4" />
-              Delete Account
+              Изтрий акаунт
             </Button>
           </div>
         </div>
@@ -205,24 +192,26 @@ export function Profile() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <DialogTitle className="text-left">Delete Account</DialogTitle>
+              <DialogTitle className="text-left">
+                Изтриване на акаунт
+              </DialogTitle>
             </div>
             <DialogDescription className="text-left">
-              This action cannot be undone. This will permanently delete your
-              account and remove all your data from our servers
+              Това действие не може да бъде отменено. Това ще изтрие окончателно
+              вашия акаунт и ще премахне всички ваши данни от нашите сървъри
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="confirm-password">
-                Enter your password to confirm
+                Въведете паролата си за потвърждение
               </Label>
               <div className="relative">
                 <Input
                   id="confirm-password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Въведете вашата парола"
                   value={confirmPassword}
                   onChange={(e) => {
                     setConfirmPassword(e.target.value);
@@ -235,7 +224,9 @@ export function Profile() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={
+                    showPassword ? "Скрий паролата" : "Покажи паролата"
+                  }
                 >
                   {showPassword ? (
                     <EyeOff className="size-4" />
@@ -253,7 +244,7 @@ export function Profile() {
           <DialogFooter className="gap-2 sm:gap-2">
             <DialogClose asChild>
               <Button variant="outline" className="flex-1">
-                Cancel
+                Отказ
               </Button>
             </DialogClose>
             <Button
@@ -265,12 +256,12 @@ export function Profile() {
               {isDeletingAccount ? (
                 <>
                   <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Deleting...
+                  Изтриване...
                 </>
               ) : (
                 <>
                   <Trash2 className="size-4" />
-                  Delete Account
+                  Изтрий акаунт
                 </>
               )}
             </Button>

@@ -1,9 +1,3 @@
-/**
- * Stripe Billing Service
- *
- * Handles all Stripe API interactions for billing operations.
- */
-
 import "server-only";
 import Stripe from "stripe";
 import { env } from "@/lib/env";
@@ -42,12 +36,7 @@ export class StripeBillingService {
   /**
    * Create Checkout Session
    *
-   * Creates a Stripe Checkout Session for upgrading to PREMIUM plan.
-   *
-   * @param userId - User ID to associate with the subscription
-   * @param userEmail - User email for pre-filling checkout
-   * @param existingCustomerId - Optional existing Stripe customer ID
-   * @returns Checkout session URL
+   * Creates a Stripe Checkout Session for upgrading to PREMIUM plan
    */
   async createCheckoutSession(
     userId: string,
@@ -112,10 +101,8 @@ export class StripeBillingService {
   /**
    * Create Customer Portal Session
    *
-   * Creates a Stripe Customer Portal Session for managing subscription.
+   * Creates a Stripe Customer Portal Session for managing subscription
    *
-   * @param stripeCustomerId - Stripe customer ID
-   * @returns Portal session URL
    */
   async createPortalSession(
     stripeCustomerId: string
@@ -138,11 +125,7 @@ export class StripeBillingService {
   /**
    * Verify Webhook Signature
    *
-   * Verifies that a webhook event came from Stripe.
-   *
-   * @param payload - Raw request body
-   * @param signature - Stripe signature header
-   * @returns Verified Stripe event
+   * Verifies that a webhook event came from Stripe
    */
   verifyWebhookSignature(payload: string, signature: string): Stripe.Event {
     if (!env.STRIPE_WEBHOOK_SECRET) {

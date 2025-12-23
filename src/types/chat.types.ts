@@ -1,12 +1,4 @@
-// ============================================================================
-// CHAT TYPES - Aligned with Backend API
-// ============================================================================
-
 export type MessageRole = "user" | "assistant" | "system";
-
-// ============================================================================
-// DOMAIN ENTITIES
-// ============================================================================
 
 export interface Conversation {
   id: string;
@@ -25,10 +17,6 @@ export interface Message {
   createdAt: string;
 }
 
-// ============================================================================
-// API REQUEST PAYLOADS
-// ============================================================================
-
 export interface CreateConversationRequest {
   title?: string;
 }
@@ -37,10 +25,6 @@ export interface AddMessageRequest {
   role: MessageRole;
   content: string;
 }
-
-// ============================================================================
-// API RESPONSE WRAPPERS
-// ============================================================================
 
 export interface ApiSuccessResponse<T> {
   success: true;
@@ -55,26 +39,14 @@ export interface ApiErrorResponse {
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
-// ============================================================================
-// TYPED API RESPONSES
-// ============================================================================
-
 export type ConversationResponse = ApiSuccessResponse<Conversation>;
 export type ConversationsListResponse = ApiSuccessResponse<Conversation[]>;
 export type MessageResponse = ApiSuccessResponse<Message>;
 export type MessagesListResponse = ApiSuccessResponse<Message[]>;
 
-// ============================================================================
-// CLIENT-SIDE ENRICHED TYPES (with computed fields)
-// ============================================================================
-
 export interface ConversationWithMessages extends Conversation {
   messages: Message[];
 }
-
-// ============================================================================
-// QUERY KEY FACTORIES
-// ============================================================================
 
 export const chatQueryKeys = {
   all: ["chat"] as const,

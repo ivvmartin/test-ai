@@ -4,16 +4,15 @@ import { env } from "@/lib/env";
 
 /**
  * Server Supabase Client (Cookies-based SSR)
- * 
+ *
  * For use in:
  * - Server Components
  * - Route Handlers
  * - Server Actions
- * 
+ *
  * Reads and writes session cookies automatically.
  * Handles session refresh transparently.
- * 
- * IMPORTANT: This uses HTTP-only cookies, NOT Bearer tokens.
+ *
  */
 export async function createClient() {
   const cookieStore = await cookies();
@@ -41,4 +40,3 @@ export async function createClient() {
     }
   );
 }
-

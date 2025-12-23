@@ -1,25 +1,15 @@
 import type {
-  AddMessageRequest,
   Conversation,
   ConversationResponse,
   ConversationsListResponse,
   CreateConversationRequest,
   Message,
-  MessageResponse,
   MessagesListResponse,
 } from "@/types/chat.types";
 
-// ============================================================================
-// CHAT API ENDPOINTS
-// ============================================================================
-
-// ============================================================================
-// CONVERSATIONS API
-// ============================================================================
-
 /**
  * Creates a new conversation for the authenticated user.
- * Enforces 10-conversation limit on the backend.
+ * Enforces 10-conversation limit on the backend
  */
 export async function createConversation(
   payload: CreateConversationRequest = {}
@@ -46,7 +36,7 @@ export async function createConversation(
 
 /**
  * Retrieves the user's most recent 10 conversations.
- * Sorted by updatedAt DESC, createdAt DESC, _id DESC.
+ * Sorted by updatedAt DESC, createdAt DESC, _id DESC
  */
 export async function getConversations(): Promise<Conversation[]> {
   const response = await fetch("/api/chat/conversations", {
@@ -67,9 +57,17 @@ export async function getConversations(): Promise<Conversation[]> {
 
 /**
  * Retrieves all messages for a specific conversation.
- * Messages are sorted by createdAt ASC.
+ * Messages are sorted by createdAt ASC
  */
 export async function getMessages(conversationId: string): Promise<Message[]> {
+  console.log(
+    "🌐 [API] getMessages called for conversation:",
+    conversationId,
+    "at",
+    new Date().toISOString()
+  );
+  console.trace("🌐 [API] getMessages call stack");
+
   const response = await fetch(`/api/chat/conversations/${conversationId}`, {
     method: "GET",
     credentials: "include",
@@ -83,6 +81,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   }
 
   const data: MessagesListResponse = await response.json();
+  console.log("🌐 [API] getMessages returned:", data.data.length, "messages");
   return data.data;
 }
 
@@ -90,13 +89,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
  * Adds a message to a conversation with streaming AI response.
  *
  * This function sends a user message and receives a streaming AI response
- * via Server-Sent Events (SSE).
- *
- * @param conversationId - The conversation ID
- * @param content - The user's message content
- * @param onChunk - Callback for each text chunk received
- * @param onDone - Callback when streaming is complete (with usage metadata)
- * @param onError - Callback for errors
+ * via Server-Sent Events (SSE)
  */
 export async function addMessageWithStreaming(
   conversationId: string,
@@ -119,7 +112,7 @@ export async function addMessageWithStreaming(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ content }),
-      credentials: "include", // Include cookies for authentication
+      credentials: "include",
     }
   );
 
@@ -150,18 +143,21 @@ export async function addMessageWithStreaming(
 
       for (const line of lines) {
         if (line.startsWith("data: ")) {
-          const data = line.slice(6); // Remove "data: " prefix
+          const data = line.slice(6);
           if (!data.trim()) continue;
 
           try {
             const parsed = JSON.parse(data);
+            console.log("📡 [SSE] Received event:", parsed);
 
             if (parsed.type === "chunk" && parsed.text) {
               callbacks.onChunk(parsed.text);
             } else if (parsed.type === "done") {
+              console.log("📡 [SSE] Done event received, calling onDone");
               callbacks.onDone(parsed.usage);
               return;
             } else if (parsed.type === "error") {
+              console.log("📡 [SSE] Error event received:", parsed.message);
               callbacks.onError(parsed.message || "Unknown error");
               return;
             }
@@ -181,45 +177,7 @@ export async function addMessageWithStreaming(
 }
 
 /**
- * DEPRECATED: Old non-streaming message API.
- * Use addMessageWithStreaming instead for AI responses.
- *
- * This is kept for backwards compatibility but should not be used
- * for the new AI chat system.
- */
-export async function addMessage(
-  conversationId: string,
-  payload: AddMessageRequest
-): Promise<Message> {
-  const response = await fetch(
-    `/api/chat/conversations/${conversationId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    }
-  );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.error?.message || `HTTP error! status: ${response.status}`
-    );
-  }
-
-  const data: MessageResponse = await response.json();
-  return data.data;
-}
-
-// ============================================================================
-// HELPER: Delete conversation
-// ============================================================================
-
-/**
- * Deletes a conversation and all its messages.
+ * Deletes a conversation and all its messages
  */
 export async function deleteConversation(
   conversationId: string

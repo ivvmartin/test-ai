@@ -1,16 +1,12 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import { getConversations, getMessages } from "./chat-api";
-import { chatQueryKeys } from "@/types/chat.types";
-import type { Conversation, Message } from "@/types/chat.types";
-import { useAuthStore } from "@/store/auth.store";
 
-// ============================================================================
-// CONVERSATIONS QUERY
-// ============================================================================
+import { useAuthStore } from "@/store/auth.store";
+import type { Conversation, Message } from "@/types/chat.types";
+import { chatQueryKeys } from "@/types/chat.types";
+import { getConversations, getMessages } from "./chat-api";
 
 /**
- * Fetches the user's most recent 10 conversations.
- * Automatically refetches when the user navigates back to the app.
+ * Fetches the user's most recent 10 conversations
  */
 export function useConversationsQuery(
   options?: Omit<UseQueryOptions<Conversation[], Error>, "queryKey" | "queryFn">
@@ -27,13 +23,8 @@ export function useConversationsQuery(
   });
 }
 
-// ============================================================================
-// MESSAGES QUERY
-// ============================================================================
-
 /**
- * Fetches all messages for a specific conversation.
- * Only runs when conversationId is provided and user is authenticated.
+ * Fetches all messages for a specific conversation
  */
 export function useMessagesQuery(
   conversationId: string | undefined,
@@ -56,13 +47,8 @@ export function useMessagesQuery(
   });
 }
 
-// ============================================================================
-// HELPER: Prefetch conversations
-// ============================================================================
-
 /**
- * Prefetches conversations to improve perceived performance.
- * Call this before navigating to the chat page.
+ * Prefetches conversations to improve perceived performance
  */
 export function prefetchConversations(queryClient: any) {
   return queryClient.prefetchQuery({

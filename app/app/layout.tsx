@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/auth.store";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { useHydration } from "@/hooks/use-hydration";
+import { useEffect } from "react";
+
+import { AppLayout } from "@components/AppLayout";
+import { useAuthStore } from "@store/auth.store";
 
 export default function ProtectedLayout({
   children,
@@ -12,18 +12,15 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const hydrated = useHydration();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isInitialized, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    // Only redirect after hydration is complete
-    if (hydrated && !isAuthenticated) {
+    if (isInitialized && !isAuthenticated) {
       router.replace("/auth/sign-in");
     }
-  }, [hydrated, isAuthenticated, router]);
+  }, [isInitialized, isAuthenticated, router]);
 
-  // Show nothing while hydrating to prevent flash
-  if (!hydrated) {
+  if (!isInitialized) {
     return null;
   }
 

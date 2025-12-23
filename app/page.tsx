@@ -2,23 +2,23 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/auth.store";
-import { useHydration } from "@/hooks/use-hydration";
+
+import { useAuthStore } from "@store/auth.store";
 
 export default function HomePage() {
   const router = useRouter();
-  const hydrated = useHydration();
+  const isInitialized = useAuthStore((state) => state.isInitialized);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   useEffect(() => {
-    if (hydrated) {
+    if (isInitialized) {
       if (isAuthenticated) {
         router.replace("/app/chat");
       } else {
         router.replace("/auth/sign-in");
       }
     }
-  }, [hydrated, isAuthenticated, router]);
+  }, [isInitialized, isAuthenticated, router]);
 
   return null;
 }

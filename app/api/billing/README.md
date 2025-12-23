@@ -11,6 +11,7 @@ Creates a Stripe Checkout Session for upgrading to PREMIUM plan.
 **Authentication:** Required (HTTP-only cookies via Supabase Auth)
 
 **Request Body:**
+
 ```json
 {
   "plan": "PREMIUM"
@@ -18,6 +19,7 @@ Creates a Stripe Checkout Session for upgrading to PREMIUM plan.
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -28,11 +30,13 @@ Creates a Stripe Checkout Session for upgrading to PREMIUM plan.
 ```
 
 **Error Responses:**
+
 - `401 Unauthorized` - User not authenticated
 - `400 Bad Request` - Invalid request body or user already subscribed
 - `500 Internal Server Error` - Stripe API error
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:3000/api/billing/checkout-session \
   -H "Content-Type: application/json" \
@@ -49,6 +53,7 @@ Creates a Stripe Customer Portal Session for managing subscription.
 **Authentication:** Required (HTTP-only cookies via Supabase Auth)
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -59,11 +64,13 @@ Creates a Stripe Customer Portal Session for managing subscription.
 ```
 
 **Error Responses:**
+
 - `401 Unauthorized` - User not authenticated
 - `404 Not Found` - No Stripe customer found (user must subscribe first)
 - `500 Internal Server Error` - Stripe API error
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:3000/api/billing/portal-session \
   -H "Cookie: sb-access-token=YOUR_SESSION_COOKIE"
@@ -78,6 +85,7 @@ Returns the current user's billing/subscription status.
 **Authentication:** Required (HTTP-only cookies via Supabase Auth)
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -91,10 +99,12 @@ Returns the current user's billing/subscription status.
 ```
 
 **Plan Keys:**
+
 - `FREE` - Free plan (no Stripe subscription)
 - `PREMIUM` - Premium plan (active Stripe subscription)
 
 **Status Values:**
+
 - `inactive` - FREE plan (no Stripe subscription)
 - `active` - Active paid subscription
 - `trialing` - In trial period
@@ -105,10 +115,12 @@ Returns the current user's billing/subscription status.
 - `incomplete_expired` - Initial payment incomplete and expired
 
 **Error Responses:**
+
 - `401 Unauthorized` - User not authenticated
 - `500 Internal Server Error` - Database error
 
 **Example:**
+
 ```bash
 curl http://localhost:3000/api/billing/status \
   -H "Cookie: sb-access-token=YOUR_SESSION_COOKIE"
@@ -123,11 +135,13 @@ Receives and processes Stripe webhook events.
 **Authentication:** None (signature-verified via Stripe webhook secret)
 
 **Headers:**
+
 - `stripe-signature` - Stripe webhook signature (required)
 
 **Body:** Raw Stripe event payload
 
 **Success Response (200):**
+
 ```json
 {
   "received": true
@@ -135,10 +149,12 @@ Receives and processes Stripe webhook events.
 ```
 
 **Error Responses:**
+
 - `400 Bad Request` - Missing or invalid signature
 - `500 Internal Server Error` - Webhook processing error
 
 **Handled Events:**
+
 - `checkout.session.completed` - User completed checkout
 - `customer.subscription.created` - Subscription created
 - `customer.subscription.updated` - Subscription updated
@@ -147,6 +163,7 @@ Receives and processes Stripe webhook events.
 - `invoice.payment_failed` - Payment failed
 
 **Example (Stripe CLI):**
+
 ```bash
 stripe listen --forward-to localhost:3000/api/billing/webhook
 ```
@@ -184,4 +201,3 @@ All endpoints return consistent error responses:
 - [Stripe Billing Documentation](../../docs/STRIPE_BILLING.md)
 - [Stripe Setup Guide](../../docs/STRIPE_SETUP.md)
 - [Usage System Documentation](../../docs/USAGE_SYSTEM.md)
-

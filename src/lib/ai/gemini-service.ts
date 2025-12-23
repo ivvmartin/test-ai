@@ -1,17 +1,16 @@
 import "server-only";
 
-import { GoogleGenerativeAI, Content } from "@google/generative-ai";
+import { Content, GoogleGenerativeAI } from "@google/generative-ai";
+
 import { env } from "@/lib/env";
 import { SYSTEM_INSTRUCTION, buildAnalysisPrompt } from "./prompts";
 import type {
-  QueryAnalysisResult,
   ConversationMessage,
+  QueryAnalysisResult,
   TokenUsage,
 } from "./types";
 
 /**
- * Gemini Service
- *
  * Handles all interactions with Google Gemini AI for the Bulgarian VAT
  * legal consultation system.
  *
@@ -33,11 +32,7 @@ class GeminiService {
    * Step 1: Analyze Query
    *
    * Analyzes the user's question in the context of conversation history
-   * to produce a refined question and search keywords.
-   *
-   * @param currentQuestion - The user's current question
-   * @param conversationHistory - Previous messages in the conversation
-   * @returns Refined question and search keywords
+   * to produce a refined question and search keywords
    */
   async analyzeQuery(
     currentQuestion: string,
@@ -55,7 +50,7 @@ class GeminiService {
       step: "1 - Query Analysis",
     });
 
-    // Format conversation history
+    // 1. Format conversation history
     const formattedHistory = conversationHistory
       .filter((msg) => msg.role !== "system") // Exclude system messages
       .map((msg) => {
@@ -64,7 +59,7 @@ class GeminiService {
       })
       .join("\n\n");
 
-    // Build analysis prompt
+    // 2. Build analysis prompt
     const prompt = buildAnalysisPrompt(formattedHistory, currentQuestion);
 
     console.log("📝 [LLM Input]", {
@@ -73,7 +68,7 @@ class GeminiService {
       promptLength: prompt.length,
     });
 
-    // Configure model for analysis
+    // 3. Configure model for analysis
     const model = this.genAI.getGenerativeModel({
       model: modelName,
       generationConfig: {
@@ -102,13 +97,11 @@ class GeminiService {
         model: modelName,
       });
 
-      // Log raw response for debugging
       console.log("📄 [Raw LLM Response]", {
         textLength: text.length,
         textPreview: text.substring(0, 200),
       });
 
-      // Parse JSON response
       let parsed: QueryAnalysisResult;
       try {
         parsed = JSON.parse(text) as QueryAnalysisResult;
@@ -123,7 +116,7 @@ class GeminiService {
         throw new Error("Failed to parse JSON response from Gemini");
       }
 
-      // Validate response structure
+      // 4. Validate response structure
       if (!parsed.refined_question || !Array.isArray(parsed.search_keywords)) {
         console.error("❌ [Invalid Response Structure]", {
           hasRefinedQuestion: !!parsed.refined_question,
@@ -148,7 +141,7 @@ class GeminiService {
         duration: `${duration}ms`,
       });
 
-      // Fallback: Use original question and extract keywords
+      // 5. Fallback: Use original question and extract keywords
       const keywords = currentQuestion
         .toLowerCase()
         .split(/\s+/)
@@ -169,11 +162,7 @@ class GeminiService {
    * Step 3: Generate Streaming Response
    *
    * Generates a comprehensive legal answer using the retrieved context
-   * and conversation history. Streams the response in real-time.
-   *
-   * @param conversationHistory - Full conversation history including current question
-   * @param finalPrompt - The final prompt with context and refined question
-   * @returns Async generator yielding text chunks and final usage metadata
+   * and conversation history. Streams the response in real-time
    */
   async *generateResponseStream(
     conversationHistory: ConversationMessage[],
@@ -195,13 +184,13 @@ class GeminiService {
       systemInstruction: "SYSTEM_INSTRUCTION (Bulgarian VAT Expert)",
     });
 
-    // Convert conversation history to Gemini Content format
+    // 1. Convert conversation history to Gemini Content format
     const contents: Content[] = conversationHistory.map((msg) => ({
       role: msg.role === "assistant" ? "model" : "user",
       parts: [{ text: msg.content }],
     }));
 
-    // Add the final prompt as the last user message
+    // 2. Add the final prompt as the last user message
     contents.push({
       role: "user",
       parts: [{ text: finalPrompt }],
@@ -213,7 +202,7 @@ class GeminiService {
       totalMessages: contents.length,
     });
 
-    // Configure model for response generation
+    // 3. Configure model for response generation
     const model = this.genAI.getGenerativeModel({
       model: modelName,
       systemInstruction: SYSTEM_INSTRUCTION,
@@ -230,7 +219,7 @@ class GeminiService {
       let chunkCount = 0;
       let totalCharsStreamed = 0;
 
-      // Stream chunks
+      // 4. Stream chunks
       for await (const chunk of result.stream) {
         const text = chunk.text();
         if (text) {
@@ -240,7 +229,7 @@ class GeminiService {
         }
       }
 
-      // Get final response with usage metadata
+      // 5. Get final response with usage metadata
       const finalResponse = await result.response;
       const usage = finalResponse.usageMetadata;
 

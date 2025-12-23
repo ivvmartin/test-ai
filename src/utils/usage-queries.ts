@@ -1,11 +1,6 @@
-/**
- * Usage Queries
- *
- * React Query hooks for fetching usage data from the Next.js API routes.
- */
-
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import type { UsageSnapshot, UsageApiResponse } from "../types/usage.types";
+
+import type { UsageApiResponse, UsageSnapshot } from "../types/usage.types";
 
 /**
  * Query key factory for usage-related queries
@@ -16,7 +11,7 @@ export const usageKeys = {
 };
 
 /**
- * Fetches the current user's usage snapshot from Next.js API route
+ * Fetches the current user's usage snapshot
  */
 async function fetchUsageSnapshot(): Promise<UsageSnapshot> {
   const response = await fetch("/api/usage/me", {
@@ -41,15 +36,6 @@ async function fetchUsageSnapshot(): Promise<UsageSnapshot> {
  * - On window focus
  * - Every 5 minutes (to stay current)
  * - After mutations that consume usage
- *
- * @example
- * ```tsx
- * const { data: usage, isLoading, error } = useUsageSnapshot();
- *
- * if (usage?.remaining === 0) {
- *   return <UpgradePrompt />;
- * }
- * ```
  */
 export function useUsageSnapshot(
   options?: Omit<UseQueryOptions<UsageSnapshot>, "queryKey" | "queryFn">
@@ -57,8 +43,8 @@ export function useUsageSnapshot(
   return useQuery<UsageSnapshot>({
     queryKey: usageKeys.snapshot(),
     queryFn: fetchUsageSnapshot,
-    staleTime: 1000 * 60 * 5, // Consider fresh for 5 minutes
-    gcTime: 1000 * 60 * 10, // Keep in cache for 10 minutes
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
     refetchOnWindowFocus: true,
     retry: (failureCount, error: any) => {
       // Don't retry on 401 (unauthorized) or 429 (limit exceeded)
@@ -73,15 +59,6 @@ export function useUsageSnapshot(
 
 /**
  * Hook variant that returns computed usage state
- *
- * @example
- * ```tsx
- * const { isNearLimit, isAtLimit, percentUsed } = useUsageState();
- *
- * if (isAtLimit) {
- *   return <LimitReachedBanner />;
- * }
- * ```
  */
 export function useUsageState() {
   const { data: usage, ...query } = useUsageSnapshot();
@@ -89,7 +66,7 @@ export function useUsageState() {
   return {
     ...query,
     usage,
-    isNearLimit: usage ? usage.percentUsed >= 80 : false,
+    isNearLimit: usage ? usage.percentUsed >= 70 : false,
     isAtLimit: usage ? usage.remaining <= 0 : false,
     percentUsed: usage?.percentUsed ?? 0,
     remaining: usage?.remaining ?? 0,

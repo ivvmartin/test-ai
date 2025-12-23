@@ -9,18 +9,9 @@ import type { VATContent, ContextRetrievalResult } from "./types";
  * Handles retrieval of Bulgarian VAT Act and Regulations content
  * using PostgreSQL full-text search with Bulgarian language configuration.
  *
- * SERVER-ONLY - Never import this in client components.
+ * SERVER-ONLY - Never import this in client components
  */
 class VATContentService {
-  /**
-   * Step 2: Find Relevant Content
-   *
-   * Searches the vat_content table using PostgreSQL full-text search
-   * to find relevant articles from ЗДДС and ППЗДДС.
-   *
-   * @param keywords - Array of search keywords from Step 1
-   * @returns Context strings for ЗДДС and ППЗДДС, plus found articles
-   */
   async findRelevantContent(
     keywords: string[]
   ): Promise<ContextRetrievalResult> {
@@ -40,8 +31,6 @@ class VATContentService {
 
     const supabase = createAdminClient();
 
-    // Join keywords into a search query
-    // For plainto_tsquery, just use space-separated keywords
     const searchQuery = keywords.join(" ");
 
     console.log("🔎 [Search Query]", {
@@ -52,11 +41,10 @@ class VATContentService {
     });
 
     try {
-      // Use RPC to call PostgreSQL full-text search directly
-      // This ensures we're using plainto_tsquery with Bulgarian config correctly
+      // 1. Use RPC to call PostgreSQL full-text search directly
       const { data, error } = await supabase.rpc("search_vat_content", {
         search_query: searchQuery,
-        max_results: 20,
+        max_results: 0,
       });
 
       console.log("🔍 [Search Result]", {
@@ -88,7 +76,7 @@ class VATContentService {
         };
       }
 
-      // Separate articles by source
+      // 2. Separate articles by source
       const actArticles = data.filter((item: any) => item.source === "ЗДДС");
       const regulationsArticles = data.filter(
         (item: any) => item.source === "ППЗДДС"
@@ -100,7 +88,6 @@ class VATContentService {
         ППЗДДС: regulationsArticles.length,
       });
 
-      // Log article numbers for debugging
       console.log("📄 [ЗДДС Articles]", {
         articles: actArticles.map((a: any) => a.article_number).join(", "),
       });
@@ -110,7 +97,7 @@ class VATContentService {
           .join(", "),
       });
 
-      // Format context strings
+      // 3. Format context strings
       const actContext = this.formatArticles(actArticles);
       const regulationsContext = this.formatArticles(regulationsArticles);
 
@@ -152,11 +139,6 @@ class VATContentService {
 
   /**
    * Seed VAT content into the database
-   *
-   * This is a helper method for initial data loading.
-   * Should be called from a seeding script.
-   *
-   * @param content - Array of VAT content items to insert
    */
   async seedContent(
     content: Array<{
@@ -179,8 +161,6 @@ class VATContentService {
 
   /**
    * Clear all VAT content from the database
-   *
-   * Use with caution! This deletes all content.
    */
   async clearContent(): Promise<void> {
     const supabase = createAdminClient();
@@ -196,5 +176,4 @@ class VATContentService {
   }
 }
 
-// Export singleton instance
 export const vatContentService = new VATContentService();

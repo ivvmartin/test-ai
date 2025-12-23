@@ -1,10 +1,3 @@
-/**
- * Usage & Limits Types
- *
- * Type definitions for the backend usage tracking system.
- * Aligns with the backend's UsageDTO and error contracts.
- */
-
 export type PlanKey = "FREE" | "PAID" | "INTERNAL";
 
 export type SubscriptionSource =
@@ -13,9 +6,6 @@ export type SubscriptionSource =
   | "subscription_inactive"
   | "default_free";
 
-/**
- * Complete usage snapshot for the current billing period
- */
 export interface UsageSnapshot {
   planKey: PlanKey;
   monthlyLimit: number;
@@ -75,7 +65,7 @@ export const PLAN_METADATA: Record<
 > = {
   FREE: {
     key: "FREE",
-    name: "Free",
+    name: "Безплатен",
     color: "text-gray-600",
     badgeVariant: "outline",
   },
@@ -87,7 +77,7 @@ export const PLAN_METADATA: Record<
   },
   INTERNAL: {
     key: "INTERNAL",
-    name: "Internal",
+    name: "Вътрешен",
     color: "text-purple-600",
     badgeVariant: "secondary",
   },

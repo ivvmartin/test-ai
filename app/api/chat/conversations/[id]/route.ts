@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { requireUser } from "@/lib/auth/requireUser";
 import { UnauthorizedError } from "@/lib/auth/errors";
 import { createClient } from "@/lib/supabase/server";
@@ -6,25 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * GET /api/chat/conversations/[id]
  *
- * Returns all messages for a specific conversation.
- *
- * Authentication: Required (HTTP-only cookies)
- *
- * Success Response (200):
- * {
- *   "success": true,
- *   "data": [
- *     {
- *       "id": "uuid",
- *       "conversationId": "uuid",
- *       "userId": "uuid",
- *       "role": "user",
- *       "content": "Message content",
- *       "tokenCount": 100,
- *       "createdAt": "2025-01-01T00:00:00.000Z"
- *     }
- *   ]
- * }
+ * Returns all messages for a specific conversation
  */
 export async function GET(
   request: NextRequest,
@@ -35,7 +18,7 @@ export async function GET(
     const supabase = await createClient();
     const { id } = await params;
 
-    // First, verify the conversation belongs to the user
+    // 1. First, verify the conversation belongs to the user
     const { data: conversation, error: convError } = await supabase
       .from("conversations")
       .select("id")
@@ -56,7 +39,7 @@ export async function GET(
       );
     }
 
-    // Fetch messages
+    // 2. Fetch messages
     const { data, error } = await supabase
       .from("messages")
       .select("*")
@@ -77,7 +60,7 @@ export async function GET(
       );
     }
 
-    // Transform to camelCase
+    // 3. Transform to camelCase
     const messages = (data || []).map((msg) => ({
       id: msg.id,
       conversationId: msg.conversation_id,
@@ -126,24 +109,7 @@ export async function GET(
 /**
  * PATCH /api/chat/conversations/[id]
  *
- * Updates a conversation's title.
- *
- * Request Body:
- * {
- *   "title": "New conversation title"
- * }
- *
- * Success Response (200):
- * {
- *   "success": true,
- *   "data": {
- *     "id": "uuid",
- *     "userId": "uuid",
- *     "title": "New title",
- *     "createdAt": "2025-01-01T00:00:00.000Z",
- *     "updatedAt": "2025-01-01T00:00:00.000Z"
- *   }
- * }
+ * Updates a conversation's title
  */
 export async function PATCH(
   request: NextRequest,
@@ -170,7 +136,6 @@ export async function PATCH(
       );
     }
 
-    // Update conversation title
     const { data, error } = await supabase
       .from("conversations")
       .update({ title })
@@ -193,7 +158,6 @@ export async function PATCH(
       );
     }
 
-    // Transform to camelCase
     const conversation = {
       id: data.id,
       userId: data.user_id,
@@ -240,13 +204,7 @@ export async function PATCH(
 /**
  * DELETE /api/chat/conversations/[id]
  *
- * Deletes a specific conversation and all its messages (cascade).
- *
- * Success Response (200):
- * {
- *   "success": true,
- *   "message": "Conversation deleted successfully"
- * }
+ * Deletes a specific conversation and all its messages (cascade)
  */
 export async function DELETE(
   request: NextRequest,
@@ -257,7 +215,6 @@ export async function DELETE(
     const supabase = await createClient();
     const { id } = await params;
 
-    // Delete conversation (messages will be deleted via CASCADE)
     const { error } = await supabase
       .from("conversations")
       .delete()

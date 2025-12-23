@@ -1,12 +1,6 @@
 import { create } from "zustand";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-/**
- * Simplified User Type
- * 
- * Derived from Supabase User.
- * No tokens stored - Supabase handles session via HTTP-only cookies.
- */
 export interface User {
   id: string;
   email: string;
@@ -17,33 +11,20 @@ export interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
 
-  // Actions
   setUser: (user: SupabaseUser | null) => void;
+  setInitialized: (initialized: boolean) => void;
   clearAuth: () => void;
 }
 
 /**
  * Auth Store (Supabase-based)
- * 
- * Minimal store that wraps Supabase session.
- * No token storage - Supabase handles this via HTTP-only cookies.
- * 
- * Usage:
- * ```ts
- * const { user, isAuthenticated } = useAuthStore();
- * ```
- * 
- * To update:
- * ```ts
- * const supabase = createClient();
- * const { data: { user } } = await supabase.auth.getUser();
- * useAuthStore.getState().setUser(user);
- * ```
  */
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
+  isInitialized: false,
 
   setUser: (supabaseUser) => {
     if (!supabaseUser) {
@@ -59,6 +40,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     };
 
     set({ user, isAuthenticated: true });
+  },
+
+  setInitialized: (initialized) => {
+    set({ isInitialized: initialized });
   },
 
   clearAuth: () => {

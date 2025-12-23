@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@components/ui/sonner";
 import "@/index.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "EVTA Consult | VAT AI",
-  description: "AI-powered VAT consulting platform",
+  title: "ЕВТА Консулт | Данъчен AI",
+  description: "AI-базирана платформа за ДДС консултации",
   icons: {
-    icon: "/evta-logo.png",
+    icon: "/brand.png",
   },
 };
 
@@ -18,10 +18,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="bg" suppressHydrationWarning>
       <body>
         <Providers>
           {children}
+
           <Toaster position="top-right" />
         </Providers>
       </body>

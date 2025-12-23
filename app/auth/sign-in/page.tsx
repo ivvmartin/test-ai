@@ -1,23 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/auth.store";
-import { useHydration } from "@/hooks/use-hydration";
-import SignIn from "@/features/auth/SignIn";
+import { useEffect } from "react";
+
+import SignIn from "@features/auth/SignIn";
+import { useAuthStore } from "@store/auth.store";
 
 export default function SignInPage() {
   const router = useRouter();
-  const hydrated = useHydration();
+  const isInitialized = useAuthStore((state) => state.isInitialized);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   useEffect(() => {
-    if (hydrated && isAuthenticated) {
+    if (isInitialized && isAuthenticated) {
       router.replace("/app/chat");
     }
-  }, [hydrated, isAuthenticated, router]);
+  }, [isInitialized, isAuthenticated, router]);
 
-  if (!hydrated) {
+  if (!isInitialized) {
     return null;
   }
 

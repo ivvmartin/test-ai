@@ -146,7 +146,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Transform to camelCase
     const conversation = {
       id: data.id,
       userId: data.user_id,

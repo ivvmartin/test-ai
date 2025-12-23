@@ -1,11 +1,11 @@
 "use client";
 
+import { useNavigate } from "@/lib/navigation";
+import { createClient } from "@/lib/supabase/browser";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "@/lib/navigation";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/browser";
 
 import { Button } from "@components/ui/button";
 import { Label } from "@components/ui/label";
@@ -47,26 +47,25 @@ export default function SetNewPassword() {
 
       if (error) {
         setApiError(
-          error.message || "Failed to reset password. Please try again"
+          error.message || "Неуспешно нулиране на парола. Моля, опитайте отново"
         );
         return;
       }
 
       toast.success(
-        "Password reset successful! You can now sign in with your new password"
+        "Паролата е нулирана успешно! Вече можете да влезете с новата си парола"
       );
       setTimeout(() => {
         navigate("/auth/sign-in");
       }, 1500);
     } catch (error) {
       console.error("Set new password error:", error);
-      setApiError("An unexpected error occurred. Please try again");
+      setApiError("Възникна неочаквана грешка. Моля, опитайте отново");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Password strength indicator
   const passwordStrength = {
     hasMinLength: password?.length >= 8,
     hasLowercase: /[a-z]/.test(password || ""),
@@ -95,10 +94,10 @@ export default function SetNewPassword() {
           {/* Form Header */}
           <div className="mb-6 text-center">
             <h2 className="text-2xl font-bold tracking-tight text-neutral-900">
-              Set new password
+              Задайте нова парола
             </h2>
             <p className="mt-2 text-sm text-neutral-600">
-              Enter your new password below
+              Въведете новата си парола по-долу
             </p>
           </div>
 
@@ -111,7 +110,7 @@ export default function SetNewPassword() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="password">New password</Label>
+              <Label htmlFor="password">Нова парола</Label>
               <div className="relative">
                 <input
                   id="password"
@@ -120,10 +119,10 @@ export default function SetNewPassword() {
                   autoComplete="new-password"
                   className="h-11 pr-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                   {...register("password", {
-                    required: "Password is required",
+                    required: "Паролата е задължителна",
                     minLength: {
                       value: 8,
-                      message: "Password must be at least 8 characters",
+                      message: "Паролата трябва да бъде поне 8 символа",
                     },
                   })}
                 />
@@ -131,7 +130,7 @@ export default function SetNewPassword() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? "Скрий парола" : "Покажи парола"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -168,7 +167,7 @@ export default function SetNewPassword() {
                           : "text-neutral-500"
                       }
                     >
-                      ✓ At least 8 characters
+                      ✓ Поне 8 символа
                     </div>
                     <div
                       className={
@@ -177,7 +176,7 @@ export default function SetNewPassword() {
                           : "text-neutral-500"
                       }
                     >
-                      ✓ One lowercase letter
+                      ✓ Една малка буква
                     </div>
                     <div
                       className={
@@ -186,7 +185,7 @@ export default function SetNewPassword() {
                           : "text-neutral-500"
                       }
                     >
-                      ✓ One uppercase letter
+                      ✓ Една главна буква
                     </div>
                     <div
                       className={
@@ -195,7 +194,7 @@ export default function SetNewPassword() {
                           : "text-neutral-500"
                       }
                     >
-                      ✓ One number
+                      ✓ Една цифра
                     </div>
                   </div>
                 </div>
@@ -203,7 +202,7 @@ export default function SetNewPassword() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm new password</Label>
+              <Label htmlFor="confirmPassword">Потвърдете новата парола</Label>
               <div className="relative">
                 <input
                   id="confirmPassword"
@@ -212,9 +211,9 @@ export default function SetNewPassword() {
                   autoComplete="new-password"
                   className="h-11 pr-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                   {...register("confirmPassword", {
-                    required: "Please confirm your password",
+                    required: "Моля, потвърдете паролата си",
                     validate: (value) =>
-                      value === password || "Passwords don't match",
+                      value === password || "Паролите не съвпадат",
                   })}
                 />
                 <button
@@ -222,7 +221,7 @@ export default function SetNewPassword() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
                   aria-label={
-                    showConfirmPassword ? "Hide password" : "Show password"
+                    showConfirmPassword ? "Скрий парола" : "Покажи парола"
                   }
                 >
                   {showConfirmPassword ? (
@@ -234,12 +233,10 @@ export default function SetNewPassword() {
               </div>
 
               {passwordsMatch && (
-                <p className="text-xs text-green-600">✓ Passwords match</p>
+                <p className="text-xs text-green-600">✓ Паролите съвпадат</p>
               )}
               {passwordsDontMatch && (
-                <p className="text-xs text-red-600">
-                  ✗ Passwords don&apos;t match
-                </p>
+                <p className="text-xs text-red-600">✗ Паролите не съвпадат</p>
               )}
             </div>
 
@@ -248,7 +245,7 @@ export default function SetNewPassword() {
               className="h-11 w-full"
               disabled={isLoading || !formState.isValid || !passwordsMatch}
             >
-              {isLoading ? "Resetting password..." : "Reset password"}
+              {isLoading ? "Нулиране на парола..." : "Нулирай парола"}
             </Button>
           </form>
         </div>

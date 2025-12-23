@@ -1,11 +1,5 @@
-/**
- * Usage & Limits System
- * 
- * Public exports for the usage tracking and enforcement system.
- */
-
-export { usageService, UsageService } from './service';
-export { LimitExceededError, UsageError, isUsageError } from './errors';
+export { usageService, UsageService } from "./service";
+export { LimitExceededError, UsageError, isUsageError } from "./errors";
 export type {
   PlanKey,
   PlanConfig,
@@ -20,6 +14,5 @@ export type {
   ConsumeUsageResult,
   ConsumeUsageMeta,
   PeriodInfo,
-} from './types';
-export { PLANS, getPeriodInfo } from './types';
-
+} from "./types";
+export { PLANS, getPeriodInfo } from "./types";

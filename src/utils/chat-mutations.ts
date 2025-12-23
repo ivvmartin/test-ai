@@ -3,32 +3,23 @@ import {
   useQueryClient,
   type UseMutationOptions,
 } from "@tanstack/react-query";
-import {
-  addMessage,
-  addMessageWithStreaming,
-  createConversation,
-  deleteConversation,
-} from "./chat-api";
-import { chatQueryKeys } from "@/types/chat.types";
+import { useCallback, useState } from "react";
+
 import type {
-  AddMessageRequest,
   Conversation,
   CreateConversationRequest,
   Message,
 } from "@/types/chat.types";
+import { chatQueryKeys } from "@/types/chat.types";
+import {
+  addMessageWithStreaming,
+  createConversation,
+  deleteConversation,
+} from "./chat-api";
 import { usageKeys } from "./usage-queries";
-import { useState, useCallback } from "react";
 
-// ============================================================================
-// ERROR HANDLING UTILITIES
-// ============================================================================
-
-/**
- * Checks if an error is a limit exceeded error (HTTP 429)
- */
 export function isLimitExceededError(error: unknown): boolean {
   if (error instanceof Error) {
-    // Check if error message contains status 429 or limit-related keywords
     return (
       error.message.includes("429") ||
       error.message.toLowerCase().includes("limit exceeded") ||
@@ -38,26 +29,6 @@ export function isLimitExceededError(error: unknown): boolean {
   return false;
 }
 
-/**
- * Extracts limit exceeded message from error response
- */
-export function getLimitExceededMessage(error: unknown): string {
-  if (error instanceof Error) {
-    // If the error message already contains a meaningful message, return it
-    if (
-      error.message.toLowerCase().includes("limit") ||
-      error.message.toLowerCase().includes("usage")
-    ) {
-      return error.message;
-    }
-  }
-  return "Monthly usage limit reached. Upgrade your plan or wait for the next billing period.";
-}
-
-// ============================================================================
-// CREATE CONVERSATION MUTATION
-// ============================================================================
-
 interface CreateConversationMutationOptions
   extends Omit<
     UseMutationOptions<Conversation, Error, CreateConversationRequest>,
@@ -65,8 +36,7 @@ interface CreateConversationMutationOptions
   > {}
 
 /**
- * Creates a new conversation.
- * Automatically invalidates conversations list after success.
+ * Creates a new conversation
  */
 export function useCreateConversationMutation(
   options?: CreateConversationMutationOptions
@@ -76,7 +46,6 @@ export function useCreateConversationMutation(
   return useMutation<Conversation, Error, CreateConversationRequest>({
     mutationFn: createConversation,
     onSuccess: (data) => {
-      // Optimistically add the new conversation to the cache immediately
       queryClient.setQueryData<Conversation[]>(
         chatQueryKeys.conversations(),
         (oldConversations) => {
@@ -86,10 +55,8 @@ export function useCreateConversationMutation(
         }
       );
 
-      // Set initial empty messages array for the new conversation
       queryClient.setQueryData<Message[]>(chatQueryKeys.messages(data.id), []);
 
-      // Invalidate to ensure we have the latest from server
       queryClient.invalidateQueries({
         queryKey: chatQueryKeys.conversations(),
       });
@@ -97,137 +64,56 @@ export function useCreateConversationMutation(
     ...(options as any),
   });
 }
-
-// ============================================================================
-// ADD MESSAGE MUTATION
-// ============================================================================
-
-interface AddMessageMutationVariables {
-  conversationId: string;
-  payload: AddMessageRequest;
-}
-
-interface AddMessageMutationOptions
-  extends Omit<
-    UseMutationOptions<Message, Error, AddMessageMutationVariables>,
-    "mutationFn"
-  > {}
-
-/**
- * Adds a message to a conversation.
- * Uses optimistic updates for immediate UI feedback.
- * Invalidates conversations list (to update recency order).
- */
-export function useAddMessageMutation(options?: AddMessageMutationOptions) {
-  const queryClient = useQueryClient();
-
-  return useMutation<Message, Error, AddMessageMutationVariables>({
-    mutationFn: ({ conversationId, payload }) =>
-      addMessage(conversationId, payload),
-
-    // Optimistic update: immediately add message to cache
-    onMutate: async ({ conversationId, payload }) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: chatQueryKeys.messages(conversationId),
-      });
-
-      // Snapshot previous messages
-      const previousMessages = queryClient.getQueryData<Message[]>(
-        chatQueryKeys.messages(conversationId)
-      );
-
-      // Optimistically update messages with temporary ID
-      if (previousMessages) {
-        const optimisticMessage: Message = {
-          id: `temp-${Date.now()}`,
-          conversationId,
-          userId: "current-user", // This will be replaced by server response
-          role: payload.role,
-          content: payload.content,
-          createdAt: new Date().toISOString(),
-        };
-
-        queryClient.setQueryData<Message[]>(
-          chatQueryKeys.messages(conversationId),
-          [...previousMessages, optimisticMessage]
-        );
-      }
-
-      // Return context for rollback
-      return { previousMessages, conversationId };
-    },
-
-    // On error: rollback to previous state
-    onError: (_error, _variables, context: any) => {
-      if (context?.previousMessages) {
-        queryClient.setQueryData<Message[]>(
-          chatQueryKeys.messages(context.conversationId),
-          context.previousMessages
-        );
-      }
-    },
-
-    // On success: replace optimistic message with server response
-    onSuccess: (data, variables) => {
-      const { conversationId } = variables;
-
-      // Update messages with actual server response
-      queryClient.setQueryData<Message[]>(
-        chatQueryKeys.messages(conversationId),
-        (old) => {
-          if (!old) return [data];
-          return [...old, data];
-        }
-      );
-
-      // Invalidate conversations to update recency order
-      queryClient.invalidateQueries({
-        queryKey: chatQueryKeys.conversations(),
-      });
-
-      // Invalidate usage snapshot to reflect consumed usage
-      queryClient.invalidateQueries({
-        queryKey: usageKeys.snapshot(),
-      });
-    },
-
-    // Always refetch after settled
-    onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: chatQueryKeys.messages(variables.conversationId),
-      });
-    },
-
-    ...(options as any),
-  });
-}
-
-// ============================================================================
-// DELETE CONVERSATION MUTATION (Future)
-// ============================================================================
-
 interface DeleteConversationMutationOptions
   extends Omit<UseMutationOptions<void, Error, string>, "mutationFn"> {}
 
 /**
- * Delete conversation mutation.
- * Removes conversation and all its messages (cascade).
+ * Delete conversation mutation
  */
 export function useDeleteConversationMutation(
   options?: DeleteConversationMutationOptions
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, string>({
+  return useMutation<
+    void,
+    Error,
+    string,
+    { previousConversations: Conversation[] | undefined }
+  >({
     mutationFn: deleteConversation,
+    onMutate: async (conversationId) => {
+      await queryClient.cancelQueries({
+        queryKey: chatQueryKeys.conversations(),
+      });
+
+      const previousConversations = queryClient.getQueryData<Conversation[]>(
+        chatQueryKeys.conversations()
+      );
+
+      queryClient.setQueryData<Conversation[]>(
+        chatQueryKeys.conversations(),
+        (oldConversations) => {
+          if (!oldConversations) return [];
+          return oldConversations.filter((conv) => conv.id !== conversationId);
+        }
+      );
+
+      return { previousConversations };
+    },
+    onError: (err, conversationId, context) => {
+      if (context?.previousConversations) {
+        queryClient.setQueryData<Conversation[]>(
+          chatQueryKeys.conversations(),
+          context.previousConversations
+        );
+      }
+    },
     onSuccess: (data, conversationId) => {
-      // Remove from cache
       queryClient.removeQueries({
         queryKey: chatQueryKeys.messages(conversationId),
       });
 
-      // Invalidate conversations list
       queryClient.invalidateQueries({
         queryKey: chatQueryKeys.conversations(),
       });
@@ -235,11 +121,6 @@ export function useDeleteConversationMutation(
     ...(options as any),
   });
 }
-
-// ============================================================================
-// STREAMING MESSAGE HOOK (NEW AI FLOW)
-// ============================================================================
-
 interface StreamingMessageState {
   isStreaming: boolean;
   streamedText: string;
@@ -252,22 +133,7 @@ interface UseStreamingMessageOptions {
 }
 
 /**
- * Hook for sending messages with streaming AI responses.
- *
- * This replaces the old useAddMessageMutation for the new AI chat system.
- * It handles:
- * - Sending user message
- * - Receiving streaming AI response
- * - Optimistic UI updates
- * - Cache invalidation
- *
- * Usage:
- * ```tsx
- * const { sendMessage, isStreaming, streamedText, error } = useStreamingMessage(conversationId);
- *
- * await sendMessage("What is VAT?");
- * // streamedText will update in real-time as AI responds
- * ```
+ * Hook for sending messages with streaming AI responses
  */
 export function useStreamingMessage(
   conversationId: string | undefined,
@@ -291,6 +157,10 @@ export function useStreamingMessage(
         return;
       }
 
+      await queryClient.cancelQueries({
+        queryKey: chatQueryKeys.messages(targetConversationId),
+      });
+
       // Reset state
       setState({
         isStreaming: true,
@@ -298,7 +168,6 @@ export function useStreamingMessage(
         error: null,
       });
 
-      // Optimistically add user message to cache
       const userMessage: Message = {
         id: `temp-user-${Date.now()}`,
         conversationId: targetConversationId,
@@ -308,26 +177,52 @@ export function useStreamingMessage(
         createdAt: new Date().toISOString(),
       };
 
+      console.log("🟢 [Optimistic] Adding user message:", userMessage);
+
       queryClient.setQueryData<Message[]>(
         chatQueryKeys.messages(targetConversationId),
-        (old) => (old ? [...old, userMessage] : [userMessage])
+        (old) => {
+          console.log("🟢 [Optimistic] User message - old cache:", old);
+          const updated = old ? [...old, userMessage] : [userMessage];
+          console.log("🟢 [Optimistic] User message - updated cache:", updated);
+          return updated;
+        }
       );
 
-      // Optimistically add empty assistant message
+      // Optimistically add assistant message with loading indicator
       const assistantMessageId = `temp-assistant-${Date.now()}`;
       const assistantMessage: Message = {
         id: assistantMessageId,
         conversationId: targetConversationId,
         userId: "assistant",
         role: "assistant",
-        content: "",
+        content: "...", // Loading
         createdAt: new Date().toISOString(),
       };
 
+      console.log(
+        "🟢 [Optimistic] Adding assistant message:",
+        assistantMessage
+      );
+
       queryClient.setQueryData<Message[]>(
         chatQueryKeys.messages(targetConversationId),
-        (old) => (old ? [...old, assistantMessage] : [assistantMessage])
+        (old) => {
+          console.log("🟢 [Optimistic] Assistant message - old cache:", old);
+          const updated = old ? [...old, assistantMessage] : [assistantMessage];
+          console.log(
+            "🟢 [Optimistic] Assistant message - updated cache:",
+            updated
+          );
+          return updated;
+        }
       );
+
+      console.log("🟢 [Optimistic] Verifying cache after both updates...");
+      const afterBoth = queryClient.getQueryData<Message[]>(
+        chatQueryKeys.messages(targetConversationId)
+      );
+      console.log("🟢 [Optimistic] Cache after both updates:", afterBoth);
 
       try {
         await addMessageWithStreaming(targetConversationId, content, {
@@ -337,26 +232,57 @@ export function useStreamingMessage(
               streamedText: prev.streamedText + text,
             }));
 
-            // Update assistant message in cache with accumulated text
             queryClient.setQueryData<Message[]>(
               chatQueryKeys.messages(targetConversationId),
               (old) => {
-                if (!old) return old;
-                return old.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? { ...msg, content: msg.content + text }
-                    : msg
-                );
+                if (!old || old.length === 0) {
+                  console.warn(
+                    "🟡 [onChunk] Cache was cleared! Recreating messages with loading state..."
+                  );
+                  const userMessage: Message = {
+                    id: `temp-user-${Date.now()}`,
+                    conversationId: targetConversationId,
+                    userId: "current-user",
+                    role: "user",
+                    content,
+                    createdAt: new Date().toISOString(),
+                  };
+                  const assistantMessage: Message = {
+                    id: assistantMessageId,
+                    conversationId: targetConversationId,
+                    userId: "assistant",
+                    role: "assistant",
+                    content: "...", // Show loading indicator
+                    createdAt: new Date().toISOString(),
+                  };
+                  return [userMessage, assistantMessage];
+                }
+
+                return old.map((msg) => {
+                  if (msg.id === assistantMessageId) {
+                    const currentContent =
+                      msg.content === "..." ? "" : msg.content;
+                    return { ...msg, content: currentContent + text };
+                  }
+                  return msg;
+                });
               }
             );
           },
-          onDone: (usage) => {
+          onDone: async (usage) => {
+            console.log("🟢 [onDone] Called with usage:", usage);
+
+            await queryClient.cancelQueries({
+              queryKey: chatQueryKeys.messages(targetConversationId),
+            });
+
             setState((prev) => ({
               ...prev,
               isStreaming: false,
             }));
 
-            // Invalidate queries to get final server state
+            console.log("🟢 [onDone] About to invalidate messages query...");
+
             queryClient.invalidateQueries({
               queryKey: chatQueryKeys.messages(targetConversationId),
             });
@@ -367,24 +293,60 @@ export function useStreamingMessage(
               queryKey: usageKeys.snapshot(),
             });
 
+            console.log("🟢 [onDone] Invalidation complete");
+
             options?.onComplete?.();
           },
-          onError: (error) => {
+          onError: async (error) => {
+            console.log("🔴 [SSE onError] Error occurred:", error);
+
+            await queryClient.cancelQueries({
+              queryKey: chatQueryKeys.messages(targetConversationId),
+            });
+
             setState((prev) => ({
               ...prev,
               isStreaming: false,
               error,
             }));
 
-            // Remove optimistic messages on error
             queryClient.setQueryData<Message[]>(
               chatQueryKeys.messages(targetConversationId),
               (old) => {
-                if (!old) return old;
-                return old.filter(
-                  (msg) =>
-                    msg.id !== userMessage.id && msg.id !== assistantMessageId
+                if (!old || old.length === 0) {
+                  console.warn(
+                    "🔴 [SSE onError] Cache was cleared! Recreating messages..."
+                  );
+                  const userMessage: Message = {
+                    id: `temp-user-${Date.now()}`,
+                    conversationId: targetConversationId,
+                    userId: "current-user",
+                    role: "user",
+                    content,
+                    createdAt: new Date().toISOString(),
+                  };
+                  const assistantMessage: Message = {
+                    id: assistantMessageId,
+                    conversationId: targetConversationId,
+                    userId: "assistant",
+                    role: "assistant",
+                    content: "Нещо се обърка. Моля, опитайте отново",
+                    createdAt: new Date().toISOString(),
+                  };
+                  return [userMessage, assistantMessage];
+                }
+
+                // Update the assistant message with error text
+                const updated = old.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? {
+                        ...msg,
+                        content: "Нещо се обърка. Моля, опитайте отново",
+                      }
+                    : msg
                 );
+
+                return updated;
               }
             );
 
@@ -394,21 +356,56 @@ export function useStreamingMessage(
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
+
+        console.log("🔴 [Catch Block] Error caught:", errorMessage);
+
+        await queryClient.cancelQueries({
+          queryKey: chatQueryKeys.messages(targetConversationId),
+        });
+
         setState((prev) => ({
           ...prev,
           isStreaming: false,
           error: errorMessage,
         }));
 
-        // Remove optimistic messages on error
+        // Update assistant message to show error immediately
         queryClient.setQueryData<Message[]>(
           chatQueryKeys.messages(targetConversationId),
           (old) => {
-            if (!old) return old;
-            return old.filter(
-              (msg) =>
-                msg.id !== userMessage.id && msg.id !== assistantMessageId
+            // If no messages in cache, create the error message from scratch
+            if (!old || old.length === 0) {
+              console.warn(
+                "🔴 [Catch Block] Cache was cleared! Recreating messages..."
+              );
+              // Recreate both user and assistant messages
+              const userMessage: Message = {
+                id: `temp-user-${Date.now()}`,
+                conversationId: targetConversationId,
+                userId: "current-user",
+                role: "user",
+                content,
+                createdAt: new Date().toISOString(),
+              };
+              const assistantMessage: Message = {
+                id: assistantMessageId,
+                conversationId: targetConversationId,
+                userId: "assistant",
+                role: "assistant",
+                content: "Нещо се обърка. Моля, опитайте отново",
+                createdAt: new Date().toISOString(),
+              };
+              return [userMessage, assistantMessage];
+            }
+
+            // Update the assistant message with error text
+            const updated = old.map((msg) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: "Нещо се обърка. Моля, опитайте отново" }
+                : msg
             );
+
+            return updated;
           }
         );
 

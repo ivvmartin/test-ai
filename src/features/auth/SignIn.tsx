@@ -1,19 +1,30 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/browser";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AnimatePresence, motion } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@components/ui/button";
 import { Label } from "@components/ui/label";
 
-interface SignInFormData {
-  email: string;
-  password: string;
-}
+const signInSchema = z.object({
+  email: z
+    .string()
+    .min(1, "Имейлът е задължителен")
+    .regex(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, "Невалиден имейл адрес"),
+  password: z
+    .string()
+    .min(1, "Паролата е задължителна")
+    .min(8, "Паролата трябва да бъде поне 8 символа"),
+});
+
+type SignInFormData = z.infer<typeof signInSchema>;
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -24,12 +35,31 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
 
   const { register, handleSubmit, formState, reset } = useForm<SignInFormData>({
+    resolver: zodResolver(signInSchema),
     mode: "onChange",
     defaultValues: {
       email: "",
       password: "",
     },
   });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const confirmed = params.get("confirmed");
+      const error = params.get("error");
+
+      if (confirmed === "true") {
+        toast.success(
+          "Имейлът е потвърден успешно! Моля, влезте с вашите данни"
+        );
+        window.history.replaceState({}, "", "/auth/sign-in");
+      } else if (error) {
+        setApiError(decodeURIComponent(error));
+        window.history.replaceState({}, "", "/auth/sign-in");
+      }
+    }
+  }, []);
 
   const onSubmit = async (data: SignInFormData) => {
     setApiError(null);
@@ -42,13 +72,12 @@ export default function SignIn() {
       });
 
       if (error) {
-        // Handle Supabase auth errors
-        let errorMessage = "We couldn't sign you in. Please try again";
+        let errorMessage = "Не успяхме да ви впишем. Моля, опитайте отново";
 
         if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Incorrect email or password. Please try again";
+          errorMessage = "Невалиден имейл или парола. Моля, опитайте отново";
         } else if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Please confirm your email address before signing in";
+          errorMessage = "Моля, потвърдете имейл адреса си преди да влезете";
         } else if (error.message) {
           errorMessage = error.message;
         }
@@ -70,16 +99,17 @@ export default function SignIn() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex h-screen items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="rounded-2xl backdrop-blur-sm bg-white/90 p-10 md:p-12 shadow-xl border border-neutral-200">
           {/* Form Header */}
           <div className="mb-6 text-center">
             <h2 className="text-2xl font-bold tracking-tight text-neutral-900">
-              Welcome back
+              Добре дошли отново
             </h2>
             <p className="mt-2 text-sm text-neutral-600">
-              Sign in to continue to your EVTA Consult workspace
+              Влезте, за да продължите към вашето работно пространство в ЕВТА
+              Консулт
             </p>
           </div>
 
@@ -101,31 +131,30 @@ export default function SignIn() {
             </AnimatePresence>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="email">Имейл адрес</Label>
               <input
                 id="email"
                 type="email"
                 placeholder="name@example.com"
                 autoComplete="email"
                 className="h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                {...register("email", {
-                  required: "Email is required",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Invalid email address",
-                  },
-                })}
+                {...register("email")}
               />
+              {formState.errors.email && (
+                <p className="text-sm text-red-600">
+                  {formState.errors.email.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Парола</Label>
                 <Link
                   href="/auth/reset-password"
                   className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
                 >
-                  Forgot password?
+                  Забравена парола?
                 </Link>
               </div>
               <div className="relative">
@@ -135,19 +164,13 @@ export default function SignIn() {
                   placeholder="••••••••"
                   autoComplete="current-password"
                   className="h-11 pr-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  {...register("password", {
-                    required: "Password is required",
-                    minLength: {
-                      value: 8,
-                      message: "Password must be at least 8 characters",
-                    },
-                  })}
+                  {...register("password")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? "Скрий парола" : "Покажи парола"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -156,6 +179,11 @@ export default function SignIn() {
                   )}
                 </button>
               </div>
+              {formState.errors.password && (
+                <p className="text-sm text-red-600">
+                  {formState.errors.password.message}
+                </p>
+              )}
             </div>
 
             <Button
@@ -163,17 +191,17 @@ export default function SignIn() {
               className="h-11 w-full"
               disabled={isLoading || !formState.isValid}
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? "Влизане..." : "Вход"}
             </Button>
 
             <p className="text-center text-xs text-neutral-500 pt-2">
-              By continuing, you agree to our{" "}
+              Продължавайки, вие се съгласявате с нашите{" "}
               <a href="/legal#tos" className="underline hover:text-neutral-700">
-                Terms of Service
+                Общи условия
               </a>{" "}
-              and{" "}
+              и{" "}
               <a href="/legal#pp" className="underline hover:text-neutral-700">
-                Privacy Policy
+                Политика за поверителност
               </a>
             </p>
           </form>
@@ -181,12 +209,12 @@ export default function SignIn() {
           {/* Create Account Link */}
           <div className="text-center mt-8 pt-6 border-t border-neutral-200">
             <p className="text-sm text-neutral-600">
-              Don&apos;t have an account?{" "}
+              Нямате акаунт?{" "}
               <Link
                 href="/auth/sign-up"
                 className="font-semibold text-neutral-900 hover:underline"
               >
-                Sign up
+                Регистрирайте се
               </Link>
             </p>
           </div>

@@ -1,17 +1,3 @@
-/**
- * Automated VAT PDF Parser
- *
- * This script extracts Bulgarian VAT Act (ЗДДС) and Regulations (ППЗДДС)
- * from PDF files and generates the structured JSON format needed for seeding.
- *
- * Usage:
- *   npx tsx scripts/parse-vat-pdfs.ts path/to/zdds.pdf path/to/ppzdds.pdf
- *
- * Output:
- *   - Generates scripts/vat-content-output.ts with structured arrays
- *   - You can then copy the arrays into scripts/seed-vat-content.ts
- */
-
 import fs from "fs";
 import path from "path";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -28,7 +14,6 @@ async function extractPDFText(pdfPath: string): Promise<string> {
   const dataBuffer = fs.readFileSync(pdfPath);
   const uint8Array = new Uint8Array(dataBuffer);
 
-  // Load the PDF document
   const loadingTask = pdfjsLib.getDocument({
     data: uint8Array,
     useSystemFonts: true,
@@ -39,7 +24,6 @@ async function extractPDFText(pdfPath: string): Promise<string> {
 
   let fullText = "";
 
-  // Extract text from each page
   for (let pageNum = 1; pageNum <= numPages; pageNum++) {
     const page = await pdfDocument.getPage(pageNum);
     const textContent = await page.getTextContent();
@@ -60,18 +44,13 @@ async function extractPDFText(pdfPath: string): Promise<string> {
 function parseZDDS(text: string): VATArticle[] {
   const articles: VATArticle[] = [];
 
-  // Clean up text first - normalize all whitespace
-  text = text
-    .replace(/\r\n/g, "\n") // Normalize line endings
-    .replace(/\f/g, "\n") // Replace form feeds with newlines
-    .replace(/\s+/g, " "); // Normalize all whitespace to single spaces
+  text = text.replace(/\r\n/g, "\n").replace(/\f/g, "\n").replace(/\s+/g, " ");
 
-  // Split by article markers
-  // Match "Чл." followed by optional spaces, then number
+  // 1. Match "Чл." followed by optional spaces, then number
   const parts = text.split(/(?=Чл\.\s+\d+[а-я]?)/);
 
   for (const part of parts) {
-    // Extract article number from the beginning
+    // 2. Extract article number from the beginning
     const match = part.match(/^Чл\.\s+(\d+[а-я]?)\s*\.?\s*(.*)/s);
 
     if (!match) continue;
@@ -79,10 +58,10 @@ function parseZDDS(text: string): VATArticle[] {
     const articleNumber = match[1].trim();
     let content = match[2].trim();
 
-    // Skip if content is too short (likely parsing error or header)
+    // 2.1. Skip if content is too short (likely parsing error or header)
     if (content.length < 20) continue;
 
-    // Remove any trailing content that belongs to next article
+    // 3. Remove any trailing content that belongs to next article
     // Stop at next "Чл." or "§" marker
     const endMatch = content.match(/(.*?)(?=Чл\.\s+\d+|§\s+\d+|$)/s);
     if (endMatch) {
@@ -105,18 +84,14 @@ function parseZDDS(text: string): VATArticle[] {
 function parsePPZDDS(text: string): VATArticle[] {
   const articles: VATArticle[] = [];
 
-  // Clean up text first - normalize all whitespace
-  text = text
-    .replace(/\r\n/g, "\n") // Normalize line endings
-    .replace(/\f/g, "\n") // Replace form feeds with newlines
-    .replace(/\s+/g, " "); // Normalize all whitespace to single spaces
+  text = text.replace(/\r\n/g, "\n").replace(/\f/g, "\n").replace(/\s+/g, " ");
 
-  // Split by paragraph markers
+  // 1. Split by paragraph markers
   // Match "§" followed by optional spaces, then number
   const parts = text.split(/(?=§\s+\d+[а-я]?)/);
 
   for (const part of parts) {
-    // Extract paragraph number from the beginning
+    // 2. Extract paragraph number from the beginning
     const match = part.match(/^§\s+(\d+[а-я]?)\s*\.?\s*(.*)/s);
 
     if (!match) continue;
@@ -124,10 +99,10 @@ function parsePPZDDS(text: string): VATArticle[] {
     const articleNumber = match[1].trim();
     let content = match[2].trim();
 
-    // Skip if content is too short (likely parsing error or header)
+    // 2.1. Skip if content is too short (likely parsing error or header)
     if (content.length < 20) continue;
 
-    // Remove any trailing content that belongs to next article
+    // 3. Remove any trailing content that belongs to next article
     // Stop at next "§" or "Чл." marker
     const endMatch = content.match(/(.*?)(?=§\s+\d+|Чл\.\s+\d+|$)/s);
     if (endMatch) {
@@ -196,7 +171,6 @@ async function main() {
 
   const [zddsPdfPath, ppzddsPdfPath] = args;
 
-  // Verify files exist
   if (!fs.existsSync(zddsPdfPath)) {
     console.error(`❌ Error: ЗДДС PDF not found: ${zddsPdfPath}`);
     process.exit(1);
@@ -209,19 +183,19 @@ async function main() {
 
   console.log("🔍 Parsing VAT PDFs...\n");
 
-  // Extract ЗДДС
+  // 1. Extract ЗДДС
   console.log(`📄 Extracting ЗДДС from: ${zddsPdfPath}`);
   const zddsText = await extractPDFText(zddsPdfPath);
   const zddsArticles = parseZDDS(zddsText);
   console.log(`✅ Found ${zddsArticles.length} ЗДДС articles\n`);
 
-  // Extract ППЗДДС
+  // 2. Extract ППЗДДС
   console.log(`📄 Extracting ППЗДДС from: ${ppzddsPdfPath}`);
   const ppzddsText = await extractPDFText(ppzddsPdfPath);
   const ppzddsArticles = parsePPZDDS(ppzddsText);
   console.log(`✅ Found ${ppzddsArticles.length} ППЗДДС articles\n`);
 
-  // Generate output
+  // 3. Generate output
   const outputContent = generateOutputFile(zddsArticles, ppzddsArticles);
   const outputPath = path.join(__dirname, "vat-content-output.ts");
 

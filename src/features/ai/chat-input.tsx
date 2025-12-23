@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Send } from "lucide-react";
 import { useRef } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@components/ui/button";
 import { cn } from "@utils/index";
 
 interface ChatInputProps {
@@ -27,7 +27,6 @@ export function ChatInput({
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(e.target.value);
 
-    // Auto-resize textarea
     e.target.style.height = "auto";
     e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
   };
@@ -40,7 +39,7 @@ export function ChatInput({
   };
 
   return (
-    <div className={cn("w-full space-y-6", className)}>
+    <div className={cn("w-full space-y-8", className)}>
       {/* Header Section */}
       <div className="space-y-2 text-center">
         <motion.h1
@@ -76,8 +75,8 @@ export function ChatInput({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={disabled}
-            rows={6}
-            className="w-full resize-none rounded-t-xl bg-transparent px-5 py-4 pr-14 text-md outline-none placeholder:text-muted-foreground/80 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-base"
+            rows={1}
+            className="w-full resize-none overflow-hidden rounded-t-xl bg-transparent px-5 py-4 pr-14 text-md outline-none placeholder:text-muted-foreground/80 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-base [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           />
 
           {/* Bottom Action Bar */}

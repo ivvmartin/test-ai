@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@/lib/auth/requireUser";
-import { UnauthorizedError } from "@/lib/auth/errors";
-import { createClient } from "@/lib/supabase/server";
-import { geminiService, vatContentService, buildFinalPrompt } from "@/lib/ai";
+
 import type { ConversationMessage } from "@/lib/ai";
-import { usageService, LimitExceededError } from "@/lib/usage";
+import { buildFinalPrompt, geminiService, vatContentService } from "@/lib/ai";
 import { generateConversationTitle } from "@/lib/ai/title-generator";
+import { UnauthorizedError } from "@/lib/auth/errors";
+import { requireUser } from "@/lib/auth/requireUser";
+import { createClient } from "@/lib/supabase/server";
+import { LimitExceededError, usageService } from "@/lib/usage";
 
 /**
  * POST /api/chat/conversations/[id]/messages
@@ -37,7 +38,6 @@ export async function POST(
     const supabase = await createClient();
     const { id: conversationId } = await params;
 
-    // Parse request body
     const body = await request.json();
     const userMessage = body.content;
 
@@ -54,7 +54,7 @@ export async function POST(
       );
     }
 
-    // Verify conversation belongs to user
+    // 1. Verify conversation belongs to user
     const { data: conversation, error: convError } = await supabase
       .from("conversations")
       .select("id")
@@ -75,12 +75,9 @@ export async function POST(
       );
     }
 
-    // Consume usage BEFORE processing AI request
+    // 2. Check usage limit BEFORE processing (but don't consume yet)
     try {
-      await usageService.consumeUsage(user.userId, 1, {
-        conversationId,
-        model: "gemini-2.5-flash",
-      });
+      await usageService.assertWithinLimit(user.userId);
     } catch (error) {
       if (error instanceof LimitExceededError) {
         return new Response(
@@ -97,7 +94,7 @@ export async function POST(
       throw error;
     }
 
-    // Fetch conversation history
+    // 3. Fetch conversation history
     const { data: messagesData, error: messagesError } = await supabase
       .from("messages")
       .select("*")
@@ -118,7 +115,7 @@ export async function POST(
       );
     }
 
-    // Convert to ConversationMessage format
+    // 4. Convert to ConversationMessage format
     const conversationHistory: ConversationMessage[] = (messagesData || []).map(
       (msg) => ({
         role: msg.role as "user" | "assistant" | "system",
@@ -126,7 +123,7 @@ export async function POST(
       })
     );
 
-    // Save user message to database
+    // 5. Save user message to database
     const { error: userMsgError } = await supabase.from("messages").insert({
       conversation_id: conversationId,
       user_id: user.userId,
@@ -148,7 +145,7 @@ export async function POST(
       );
     }
 
-    // Auto-generate title if this is the first message
+    // 6. Auto-generate title if this is the first message
     if (conversationHistory.length === 0) {
       const title = generateConversationTitle(userMessage);
       await supabase
@@ -158,7 +155,7 @@ export async function POST(
         .eq("user_id", user.userId);
     }
 
-    // Create streaming response
+    // 7. Create streaming response
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -226,7 +223,7 @@ export async function POST(
             }
           }
 
-          // Save assistant response to database
+          // 8. Save assistant response to database
           await supabase.from("messages").insert({
             conversation_id: conversationId,
             user_id: user.userId,
@@ -235,7 +232,22 @@ export async function POST(
             token_count: tokenUsage?.totalTokenCount || null,
           });
 
-          // Send done event
+          // 9. Consume usage AFTER successful completion
+          try {
+            await usageService.consumeUsage(user.userId, 1, {
+              conversationId,
+              model: "gemini-2.5-flash",
+            });
+          } catch (error) {
+            console.error(
+              "Failed to consume usage after successful response:",
+              error
+            );
+            // Don't fail the request if usage tracking fails
+            // The user already got their response
+          }
+
+          // 10. Send done event
           controller.enqueue(
             encoder.encode(
               `data: ${JSON.stringify({ type: "done", usage: tokenUsage })}\n\n`
@@ -245,6 +257,15 @@ export async function POST(
           controller.close();
         } catch (error) {
           console.error("Error in streaming response:", error);
+
+          // 11. Save error message to database so it persists
+          await supabase.from("messages").insert({
+            conversation_id: conversationId,
+            user_id: user.userId,
+            role: "assistant",
+            content: "Something went wrong. Please try again",
+          });
+
           controller.enqueue(
             encoder.encode(
               `data: ${JSON.stringify({

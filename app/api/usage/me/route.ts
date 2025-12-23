@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { requireUser } from "@/lib/auth/requireUser";
 import { UnauthorizedError } from "@/lib/auth/errors";
 import { usageService } from "@/lib/usage/service";
@@ -6,11 +7,11 @@ import { LimitExceededError, UsageError } from "@/lib/usage/errors";
 
 /**
  * GET /api/usage/me
- * 
+ *
  * Returns the authenticated user's usage snapshot for the current period.
- * 
+ *
  * Authentication: Required (HTTP-only cookies)
- * 
+ *
  * Success Response (200):
  * {
  *   "success": true,
@@ -26,7 +27,7 @@ import { LimitExceededError, UsageError } from "@/lib/usage/errors";
  *     "source": "default_free"
  *   }
  * }
- * 
+ *
  * Error Response (401):
  * {
  *   "success": false,
@@ -35,7 +36,7 @@ import { LimitExceededError, UsageError } from "@/lib/usage/errors";
  *     "code": "UNAUTHORIZED"
  *   }
  * }
- * 
+ *
  * Error Response (429):
  * {
  *   "success": false,
@@ -44,7 +45,7 @@ import { LimitExceededError, UsageError } from "@/lib/usage/errors";
  *     "code": "LIMIT_EXCEEDED"
  *   }
  * }
- * 
+ *
  * Error Response (500):
  * {
  *   "success": false,
@@ -56,10 +57,10 @@ import { LimitExceededError, UsageError } from "@/lib/usage/errors";
  */
 export async function GET() {
   try {
-    // Require authentication
+    // 1. Require authentication
     const user = await requireUser();
 
-    // Get usage snapshot
+    // 2. Get usage snapshot
     const snapshot = await usageService.getUsageSnapshot(user.userId);
 
     return NextResponse.json({
@@ -77,7 +78,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    // Handle authentication errors
     if (error instanceof UnauthorizedError) {
       return NextResponse.json(
         {
@@ -134,4 +134,3 @@ export async function GET() {
     );
   }
 }
-

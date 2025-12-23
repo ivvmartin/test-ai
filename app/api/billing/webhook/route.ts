@@ -19,6 +19,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
+
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StripeBillingService, WebhookVerificationError } from "@/lib/billing";
 
@@ -134,8 +135,6 @@ async function handleCheckoutSessionCompleted(
     return;
   }
 
-  const adminClient = createAdminClient();
-
   // Fetch full subscription details from Stripe
   if (session.subscription && typeof session.subscription === "string") {
     const stripe = new (await import("stripe")).default(
@@ -179,17 +178,22 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
   const adminClient = createAdminClient();
 
-  const { error } = await adminClient.from("subscriptions").upsert({
-    user_id: userId,
-    plan_key: "FREE",
-    status: "inactive",
-    stripe_customer_id: null,
-    stripe_subscription_id: null,
-    stripe_price_id: null,
-    current_period_end: null,
-    cancel_at_period_end: false,
-    provider: "none",
-  });
+  const { error } = await adminClient.from("subscriptions").upsert(
+    {
+      user_id: userId,
+      plan_key: "FREE",
+      status: "inactive",
+      stripe_customer_id: null,
+      stripe_subscription_id: null,
+      stripe_price_id: null,
+      current_period_end: null,
+      cancel_at_period_end: false,
+      provider: "none",
+    },
+    {
+      onConflict: "user_id",
+    }
+  );
 
   if (error) {
     console.error(`Failed to delete subscription for user ${userId}:`, error);
@@ -269,7 +273,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
  * Upsert subscription record from Stripe subscription object
  *
  * Note: Stripe API 2025-03-31.basil+ deprecated subscription-level current_period_end.
- * We calculate it from trial_end (for trialing) or set to null (will be updated from invoices).
+ * We calculate it from trial_end (for trialing) or set to null (will be updated from invoices)
  */
 async function upsertSubscription(
   userId: string,
@@ -286,20 +290,32 @@ async function upsertSubscription(
     currentPeriodEnd = new Date(subscription.trial_end * 1000).toISOString();
   }
 
-  const { data, error } = await adminClient.from("subscriptions").upsert({
-    user_id: userId,
-    plan_key: "PREMIUM",
-    status: subscription.status as any,
-    stripe_customer_id:
-      typeof subscription.customer === "string"
-        ? subscription.customer
-        : subscription.customer.id,
-    stripe_subscription_id: subscription.id,
-    stripe_price_id: priceId,
-    current_period_end: currentPeriodEnd,
-    cancel_at_period_end: subscription.cancel_at_period_end,
-    provider: "stripe",
-  });
+  // Determine plan_key based on subscription status
+  // Only grant PREMIUM access for active or trialing subscriptions
+  const planKey =
+    subscription.status === "active" || subscription.status === "trialing"
+      ? "PREMIUM"
+      : "FREE";
+
+  const { error } = await adminClient.from("subscriptions").upsert(
+    {
+      user_id: userId,
+      plan_key: planKey,
+      status: subscription.status as any,
+      stripe_customer_id:
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer.id,
+      stripe_subscription_id: subscription.id,
+      stripe_price_id: priceId,
+      current_period_end: currentPeriodEnd,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      provider: "stripe",
+    },
+    {
+      onConflict: "user_id",
+    }
+  );
 
   if (error) {
     console.error(`Failed to upsert subscription for user ${userId}:`, error);
@@ -307,6 +323,6 @@ async function upsertSubscription(
   }
 
   console.log(
-    `Subscription upserted for user ${userId}: ${subscription.status}`
+    `Subscription upserted for user ${userId}: status=${subscription.status}, plan_key=${planKey}`
   );
 }

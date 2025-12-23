@@ -1,39 +1,22 @@
-/**
- * Usage Indicator Component
- * 
- * Displays the user's current usage status with visual feedback.
- * Adapts styling based on usage levels and plan type.
- */
+import { motion } from "framer-motion";
+import { AlertCircle, TrendingUp, Zap } from "lucide-react";
 
-import { AlertCircle, Zap, TrendingUp } from 'lucide-react';
-import { useUsageSnapshot } from '../../utils/usage-queries';
-import { PLAN_METADATA, type PlanKey } from '../../types/usage.types';
-import { Skeleton } from '../ui/skeleton';
-import { cn } from '../../utils';
+import { PLAN_METADATA } from "../types/usage.types";
+import { cn } from "../lib/utils";
+import { useUsageSnapshot } from "../utils/usage-queries";
+import { Skeleton } from "./ui/skeleton";
 
-interface UsageIndicatorProps {
-  variant?: 'compact' | 'full' | 'minimal';
+type Props = {
+  variant?: "compact" | "full" | "minimal";
   showPlanBadge?: boolean;
   className?: string;
-}
+};
 
-/**
- * Visual indicator of user's current usage status
- * 
- * @example
- * ```tsx
- * // Compact view for sidebar
- * <UsageIndicator variant="compact" />
- * 
- * // Full view for settings
- * <UsageIndicator variant="full" showPlanBadge />
- * ```
- */
 export function UsageIndicator({
-  variant = 'compact',
+  variant = "compact",
   showPlanBadge = true,
   className,
-}: UsageIndicatorProps) {
+}: Props) {
   const { data: usage, isLoading, error } = useUsageSnapshot();
 
   if (isLoading) {
@@ -48,18 +31,18 @@ export function UsageIndicator({
   const isNearLimit = usage.percentUsed >= 80;
   const isAtLimit = usage.remaining <= 0;
 
-  if (variant === 'minimal') {
+  if (variant === "minimal") {
     return (
-      <div className={cn('flex items-center gap-2', className)}>
+      <div className={cn("flex items-center gap-2", className)}>
         <div className="flex items-center gap-1.5">
           <div
             className={cn(
-              'h-2 w-2 rounded-full',
+              "h-2 w-2 rounded-full",
               isAtLimit
-                ? 'bg-red-500'
+                ? "bg-red-500"
                 : isNearLimit
-                  ? 'bg-yellow-500'
-                  : 'bg-green-500'
+                ? "bg-yellow-500"
+                : "bg-green-700"
             )}
           />
           <span className="text-xs text-muted-foreground">
@@ -70,13 +53,18 @@ export function UsageIndicator({
     );
   }
 
-  if (variant === 'compact') {
+  if (variant === "compact") {
     return (
-      <div className={cn('flex flex-col gap-2 p-3 rounded-lg bg-muted/50', className)}>
+      <div
+        className={cn(
+          "flex flex-col gap-2 p-3 rounded-lg bg-muted/50",
+          className
+        )}
+      >
         {showPlanBadge && (
           <div className="flex items-center justify-between">
-            <span className={cn('text-xs font-semibold', planMeta.color)}>
-              {planMeta.name} Plan
+            <span className={cn("text-xs font-semibold", planMeta.color)}>
+              {planMeta.name} план
             </span>
             {isAtLimit && (
               <AlertCircle className="h-3.5 w-3.5 text-destructive" />
@@ -88,19 +76,19 @@ export function UsageIndicator({
           <div className="flex items-baseline justify-between text-sm">
             <span className="font-medium">{usage.used}</span>
             <span className="text-xs text-muted-foreground">
-              of {usage.monthlyLimit} messages
+              от {usage.monthlyLimit} съобщения
             </span>
           </div>
 
           <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
               className={cn(
-                'h-full transition-all duration-300',
+                "h-full transition-all duration-300",
                 isAtLimit
-                  ? 'bg-destructive'
+                  ? "bg-destructive"
                   : isNearLimit
-                    ? 'bg-yellow-500'
-                    : 'bg-primary'
+                  ? "bg-yellow-500"
+                  : "bg-primary"
               )}
               style={{ width: `${Math.min(usage.percentUsed, 100)}%` }}
             />
@@ -108,15 +96,15 @@ export function UsageIndicator({
 
           {isAtLimit ? (
             <p className="text-xs text-destructive font-medium">
-              Limit reached
+              Лимитът е достигнат
             </p>
           ) : isNearLimit ? (
-            <p className="text-xs text-yellow-600 dark:text-yellow-500">
-              {usage.remaining} messages remaining
+            <p className="text-xs text-yellow-700 dark:text-yellow-400">
+              {usage.remaining} оставащи съобщения
             </p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              {usage.remaining} remaining
+              {usage.remaining} оставащи
             </p>
           )}
         </div>
@@ -126,18 +114,27 @@ export function UsageIndicator({
 
   // Full variant
   return (
-    <div className={cn('flex flex-col gap-4 p-4 rounded-lg border bg-card', className)}>
+    <div
+      className={cn(
+        "flex flex-col gap-4 p-4 rounded-lg border bg-card",
+        className
+      )}
+    >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold">Usage This Month</h3>
+          <h3 className="text-sm font-semibold">Употреба този месец</h3>
           <p className="text-xs text-muted-foreground">
-            Period: {formatPeriodKey(usage.periodKey)}
+            Период: {formatPeriodKey(usage.periodKey)}
           </p>
         </div>
         {showPlanBadge && (
-          <div className={cn('flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted')}>
-            <Zap className={cn('h-3.5 w-3.5', planMeta.color)} />
-            <span className={cn('text-xs font-semibold', planMeta.color)}>
+          <div
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted"
+            )}
+          >
+            <Zap className={cn("h-3.5 w-3.5", planMeta.color)} />
+            <span className={cn("text-xs font-semibold", planMeta.color)}>
               {planMeta.name}
             </span>
           </div>
@@ -148,67 +145,79 @@ export function UsageIndicator({
         <div className="flex items-baseline justify-between">
           <div className="space-y-0.5">
             <p className="text-2xl font-bold">{usage.used}</p>
-            <p className="text-xs text-muted-foreground">messages used</p>
+            <p className="text-xs text-muted-foreground">
+              използвани съобщения
+            </p>
           </div>
           <div className="text-right space-y-0.5">
             <p className="text-2xl font-bold">{usage.remaining}</p>
-            <p className="text-xs text-muted-foreground">remaining</p>
+            <p className="text-xs text-muted-foreground">оставащи</p>
           </div>
         </div>
 
         <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(usage.percentUsed, 100)}%` }}
+            transition={{ duration: 1, ease: "easeOut" }}
             className={cn(
-              'h-full transition-all duration-500',
+              "h-full",
               isAtLimit
-                ? 'bg-destructive'
+                ? "bg-destructive"
                 : isNearLimit
-                  ? 'bg-yellow-500'
-                  : 'bg-primary'
+                ? "bg-yellow-500"
+                : "bg-green-500"
             )}
-            style={{ width: `${Math.min(usage.percentUsed, 100)}%` }}
           />
         </div>
 
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">
-            {usage.percentUsed.toFixed(0)}% used
+            {usage.percentUsed.toFixed(0)}% използвани
           </span>
           <span className="text-muted-foreground">
-            {usage.monthlyLimit} total
+            {usage.monthlyLimit} общо
           </span>
         </div>
 
         {isAtLimit && (
-          <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20"
+          >
             <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
               <p className="text-sm font-medium text-destructive">
-                Monthly limit reached
+                Месечният лимит е достигнат
               </p>
               <p className="text-xs text-muted-foreground">
-                Upgrade your plan or wait until{' '}
-                {new Date(usage.periodEnd).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
+                Надградете плана си или изчакайте до{" "}
+                {new Date(usage.periodEnd).toLocaleDateString("bg-BG", {
+                  month: "short",
+                  day: "numeric",
                 })}
               </p>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {!isAtLimit && isNearLimit && (
-          <div className="flex items-start gap-2 p-3 rounded-md bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-start gap-2 p-3 rounded-md bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900"
+          >
             <TrendingUp className="h-4 w-4 text-yellow-600 dark:text-yellow-500 mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
               <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
-                Approaching limit
+                Приближавате лимита
               </p>
               <p className="text-xs text-yellow-600 dark:text-yellow-500">
-                Consider upgrading to avoid interruptions
+                Помислете за надграждане, за да избегнете прекъсвания
               </p>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>
@@ -218,8 +227,8 @@ export function UsageIndicator({
 /**
  * Loading skeleton for usage indicator
  */
-function UsageIndicatorSkeleton({ variant }: { variant: UsageIndicatorProps['variant'] }) {
-  if (variant === 'minimal') {
+function UsageIndicatorSkeleton({ variant }: { variant: Props["variant"] }) {
+  if (variant === "minimal") {
     return (
       <div className="flex items-center gap-2">
         <Skeleton className="h-2 w-2 rounded-full" />
@@ -228,7 +237,7 @@ function UsageIndicatorSkeleton({ variant }: { variant: UsageIndicatorProps['var
     );
   }
 
-  if (variant === 'compact') {
+  if (variant === "compact") {
     return (
       <div className="flex flex-col gap-2 p-3 rounded-lg bg-muted/50">
         <Skeleton className="h-4 w-20" />
@@ -262,12 +271,8 @@ function UsageIndicatorSkeleton({ variant }: { variant: UsageIndicatorProps['var
   );
 }
 
-/**
- * Formats period key (YYYY-MM) to human-readable string
- */
 function formatPeriodKey(periodKey: string): string {
-  const [year, month] = periodKey.split('-');
+  const [year, month] = periodKey.split("-");
   const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  return date.toLocaleDateString("bg-BG", { month: "long", year: "numeric" });
 }
-
