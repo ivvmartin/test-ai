@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Content, GoogleGenerativeAI } from "@google/generative-ai";
+import { Content, GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 import { env } from "@/lib/env";
 import { SYSTEM_INSTRUCTION, buildAnalysisPrompt } from "./prompts";
@@ -68,12 +68,31 @@ class GeminiService {
       promptLength: prompt.length,
     });
 
-    // 3. Configure model for analysis
+    // 3. Configure model for analysis with strict schema
     const model = this.genAI.getGenerativeModel({
       model: modelName,
       generationConfig: {
         temperature,
         responseMimeType: "application/json",
+        responseSchema: {
+          type: SchemaType.OBJECT,
+          properties: {
+            refined_question: {
+              type: SchemaType.STRING,
+              description:
+                "The refined, more precise question in Bulgarian, considering the whole conversation.",
+            },
+            search_keywords: {
+              type: SchemaType.ARRAY,
+              items: {
+                type: SchemaType.STRING,
+              },
+              description:
+                "A list of keywords in Bulgarian for searching the legal text, based on the latest question and context.",
+            },
+          },
+          required: ["refined_question", "search_keywords"],
+        },
       },
     });
 

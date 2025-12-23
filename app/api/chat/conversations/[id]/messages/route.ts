@@ -192,17 +192,13 @@ export async function POST(
             contextResult.regulationsContext
           );
 
-          // Add user message to history for generation
-          const historyWithUserMsg: ConversationMessage[] = [
-            ...conversationHistory,
-            { role: "user", content: userMessage },
-          ];
-
           let fullResponse = "";
           let tokenUsage = null;
 
+          // Pass conversationHistory without the current message
+          // The service will add finalPrompt as the new user message
           for await (const chunk of geminiService.generateResponseStream(
-            historyWithUserMsg,
+            conversationHistory,
             finalPrompt
           )) {
             if (chunk.text) {

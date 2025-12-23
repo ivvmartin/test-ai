@@ -42,7 +42,7 @@ const MessageItem = memo(
             </span>
           </div>
           <div className="flex min-w-0 flex-1 items-center">
-            <p className="text-foreground break-words text-sm leading-relaxed sm:text-base">
+            <p className="text-foreground break-words text-[0.9rem] leading-relaxed">
               {message.content}
             </p>
           </div>
@@ -66,7 +66,7 @@ const MessageItem = memo(
           <>
             <div
               className={cn(
-                "text-foreground min-w-0 flex-1 overflow-x-auto text-sm leading-relaxed sm:text-base",
+                "text-foreground min-w-0 flex-1 overflow-x-auto",
                 message.content === "Нещо се обърка. Моля, опитайте отново"
                   ? "rounded-lg border border-destructive/10 bg-destructive/10 p-3"
                   : ""
@@ -133,12 +133,12 @@ function AiInput({
 
   return (
     <div className="w-full">
-      <div className="relative mx-auto w-full max-w-4xl">
+      <div className="relative mx-auto w-full max-w-4xl rounded-2xl bg-muted/50 shadow-lg">
         {/* Warning Banner */}
         {showWarning && (
           <div
             className={cn(
-              "flex items-center justify-between rounded-t-2xl border border-b-0 px-5 py-2.5 transition-all duration-200 bg-muted/50"
+              "flex items-center justify-between rounded-t-2xl border border-b-0 px-5 py-2.5 transition-all duration-200 bg-background"
             )}
           >
             <div className="flex items-center gap-2">
@@ -174,7 +174,7 @@ function AiInput({
               : "Напишете вашия въпрос за ДДС тук…"
           }
           className={cn(
-            "bg-muted/50 text-foreground placeholder:text-muted-foreground/70 w-full resize-none border border-input py-4 pr-12 pl-5 leading-relaxed",
+            "bg-background text-foreground placeholder:text-muted-foreground/70 w-full resize-none border border-input py-4 pr-12 pl-5 leading-relaxed",
             "min-h-[56px] transition-all duration-200 shadow-sm",
             "focus-visible:border-ring focus-visible:ring-[1px] focus-visible:ring-ring/50",
             showWarning ? "rounded-b-2xl rounded-t-none" : "rounded-2xl",
@@ -410,70 +410,78 @@ export function ChatPage() {
   }
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 p-4 md:p-6">
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        {showSkeleton ? (
-          // Loading skeleton
-          <div className="space-y-6">
+    <div className="relative h-full w-full">
+      {/* Messages area */}
+      <div className="h-full overflow-y-auto pb-32">
+        <div className="mx-auto w-full max-w-4xl p-4 md:p-6">
+          {showSkeleton ? (
+            // Loading skeleton
             <div className="space-y-6">
-              {/* User message skeleton */}
-              <div className="flex flex-row gap-3 px-1 py-2 sm:gap-4 sm:px-2">
-                <Skeleton className="size-8 shrink-0 rounded-full" />
-                <div className="flex min-w-0 flex-1 flex-col gap-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
+              <div className="space-y-6">
+                {/* User message skeleton */}
+                <div className="flex flex-row gap-3 px-1 py-2 sm:gap-4 sm:px-2">
+                  <Skeleton className="size-8 shrink-0 rounded-full" />
+                  <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
                 </div>
-              </div>
-              {/* AI message skeleton */}
-              <div className="bg-muted/30 flex gap-3 rounded-xl px-3 py-4 sm:gap-4 sm:px-4 sm:py-5">
-                <Skeleton className="size-8 shrink-0 rounded-full" />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-5/6" />
-                  <Skeleton className="h-4 w-4/5" />
+                {/* AI message skeleton */}
+                <div className="bg-muted/30 flex gap-3 rounded-xl px-3 py-4 sm:gap-4 sm:px-4 sm:py-5">
+                  <Skeleton className="size-8 shrink-0 rounded-full" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-4/5" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ) : messages.length > 0 ? (
-          <AnimatePresence mode="popLayout">
-            {messages.map((message) => (
-              <div key={message.id} className="mb-6 last:mb-0">
-                <MessageItem message={message} userEmail={user?.email} />
-              </div>
-            ))}
-          </AnimatePresence>
-        ) : null}
-        <div ref={messagesEndRef} />
+          ) : messages.length > 0 ? (
+            <AnimatePresence mode="popLayout">
+              {messages.map((message) => (
+                <div key={message.id} className="mb-6 last:mb-0">
+                  <MessageItem message={message} userEmail={user?.email} />
+                </div>
+              ))}
+            </AnimatePresence>
+          ) : null}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <AiInput
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onSubmit={handleSubmit}
-          onKeyDown={handleKeyDown}
-          disabled={
-            isAtLimit ||
-            isGenerating ||
-            isStreaming ||
-            isLoadingMessages ||
-            hasLoadingMessage
-          }
-          isNearLimit={isNearLimit}
-          isAtLimit={isAtLimit}
-          usage={
-            usage
-              ? {
-                  used: usage.used,
-                  monthlyLimit: usage.monthlyLimit,
-                  remaining: usage.remaining,
-                  periodEnd: usage.periodEnd,
-                }
-              : undefined
-          }
-        />
-      </form>
+      {/* Input area */}
+      <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6 md:left-[var(--sidebar-width)] md:peer-data-[state=collapsed]:left-0">
+        <div className="mx-auto w-full max-w-2xl">
+          <form onSubmit={handleSubmit} className="pointer-events-auto">
+            <AiInput
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onSubmit={handleSubmit}
+              onKeyDown={handleKeyDown}
+              disabled={
+                isAtLimit ||
+                isGenerating ||
+                isStreaming ||
+                isLoadingMessages ||
+                hasLoadingMessage
+              }
+              isNearLimit={isNearLimit}
+              isAtLimit={isAtLimit}
+              usage={
+                usage
+                  ? {
+                      used: usage.used,
+                      monthlyLimit: usage.monthlyLimit,
+                      remaining: usage.remaining,
+                      periodEnd: usage.periodEnd,
+                    }
+                  : undefined
+              }
+            />
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
