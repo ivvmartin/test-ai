@@ -177,6 +177,7 @@ function AiInput({
             "bg-background text-foreground placeholder:text-muted-foreground/70 w-full resize-none border border-input py-4 pr-12 pl-5 leading-relaxed",
             "min-h-[56px] transition-all duration-200 shadow-sm",
             "focus-visible:border-ring focus-visible:ring-[1px] focus-visible:ring-ring/50",
+            "placeholder:text-sm sm:placeholder:text-sm",
             showWarning ? "rounded-b-2xl rounded-t-none" : "rounded-2xl",
             disabled && "cursor-not-allowed opacity-60"
           )}

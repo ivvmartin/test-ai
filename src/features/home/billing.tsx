@@ -67,7 +67,7 @@ export function BillingPage() {
       >
         {/* Header */}
         <div>
-          <h1 className="font-bold text-lg tracking-tight">
+          <h1 className="font-bold text-xl tracking-tight">
             Абонамент и плащане
           </h1>
           <p className="text-muted-foreground">
@@ -142,7 +142,7 @@ export function BillingPage() {
                       </div>
                     )}
                     <div>
-                      <p className="font-semibold text-md">
+                      <p className="font-semibold text-sm">
                         {isPremium ? "Pro план" : "Безплатен план"}
                       </p>
                       <p className="text-sm text-muted-foreground">

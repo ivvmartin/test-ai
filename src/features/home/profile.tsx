@@ -151,7 +151,7 @@ export function Profile() {
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
               <h3 className="font-semibold text-base">Изход</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Ще трябва да влезете отново, за да получите достъп до акаунта си
               </p>
             </div>
@@ -170,7 +170,7 @@ export function Profile() {
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
               <h3 className="font-semibold text-base">Изтриване на акаунт</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Това действие е необратимо и ще изтрие окончателно вашия акаунт
                 и всички свързани данни
               </p>
