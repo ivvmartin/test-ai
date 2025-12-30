@@ -5,7 +5,6 @@ export type {
   PlanConfig,
   Subscription,
   SubscriptionStatus,
-  SubscriptionProvider,
   UsageCounter,
   UserMetadata,
   EntitlementResult,
