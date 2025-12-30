@@ -7,12 +7,14 @@ import { UnauthorizedError } from "@/lib/auth/errors";
 import { requireUser } from "@/lib/auth/requireUser";
 import { createClient } from "@/lib/supabase/server";
 import { LimitExceededError, usageService } from "@/lib/usage";
+import { guardrailService, JailbreakAttemptError } from "@/lib/guardrail";
 
 /**
- * POST /api/chat/conversations/[id]/messages
+ * POST /api/chat/chats/[id]/messages
  *
- * Adds a user message to a conversation and generates an AI response.
- * Implements the 3-step AI flow:
+ * Adds a user message to a chat and generates an AI response.
+ * Implements the 4-step AI flow:
+ * 0. Guardrail Validation - Check for jailbreak/malicious attempts
  * 1. Query Analysis - Refine question and extract keywords
  * 2. Context Retrieval - Find relevant VAT articles
  * 3. Response Generation - Stream AI response with context
@@ -52,6 +54,33 @@ export async function POST(
           headers: { "Content-Type": "application/json" },
         }
       );
+    }
+
+    // STEP 0: Guardrail Validation
+    // Check for jailbreak/malicious attempts BEFORE any processing
+    let isGuardrailBlocked = false;
+    try {
+      // Extract IP address from request headers
+      let ipAddress =
+        request.headers.get("x-forwarded-for")?.split(",")[0] ||
+        request.headers.get("x-real-ip") ||
+        undefined;
+
+      // Convert IPv6 localhost to IPv4 for cleaner logging
+      if (ipAddress === "::1" || ipAddress === "::ffff:127.0.0.1") {
+        ipAddress = "127.0.0.1";
+      }
+
+      await guardrailService.validateQuery(user.userId, userMessage, ipAddress);
+    } catch (error) {
+      if (error instanceof JailbreakAttemptError) {
+        console.warn("🚨 [API] Guardrail blocked query for user:", user.userId);
+        // Mark as blocked but continue to save the message
+        isGuardrailBlocked = true;
+      } else {
+        // Re-throw unexpected errors
+        throw error;
+      }
     }
 
     // 1. Verify conversation belongs to user
@@ -160,8 +189,46 @@ export async function POST(
     const stream = new ReadableStream({
       async start(controller) {
         try {
+          // If guardrail blocked the message, save a silent error and return
+          if (isGuardrailBlocked) {
+            console.log(
+              "🛡️ [API] Guardrail blocked - saving silent error message"
+            );
+
+            const errorMessage =
+              "Съжалявам, но не мога да обработя това съобщение.";
+
+            // Save the error message as assistant response
+            await supabase.from("messages").insert({
+              conversation_id: conversationId,
+              user_id: user.userId,
+              role: "assistant",
+              content: errorMessage,
+              token_count: null,
+            });
+
+            // Send the error as a complete response
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  type: "chunk",
+                  text: errorMessage,
+                })}\n\n`
+              )
+            );
+
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`)
+            );
+
+            controller.close();
+            return;
+          }
+
           // STEP 1: Analyze Query
-          console.log("🚀 [API] Starting 3-step AI flow...");
+          console.log(
+            "🚀 [API] Starting 3-step AI flow (guardrail already passed)..."
+          );
           const analysisResult = await geminiService.analyzeQuery(
             userMessage,
             conversationHistory

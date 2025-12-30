@@ -1,20 +1,11 @@
-export type SubscriptionStatus =
-  | "active"
-  | "trialing"
-  | "past_due"
-  | "canceled"
-  | "unpaid"
-  | "incomplete"
-  | "incomplete_expired"
-  | "inactive"; // For FREE plan (no Stripe subscription)
+export type PlanKey = "FREE" | "PAID" | "INTERNAL";
 
-export type BillingPlanKey = "FREE" | "PREMIUM";
-
-export interface BillingStatus {
-  planKey: BillingPlanKey;
-  status: SubscriptionStatus;
-  currentPeriodEnd: string | null; // ISO 8601 date string
-  cancelAtPeriodEnd: boolean;
+export interface BillingPlan {
+  plan: PlanKey;
+  monthlyLimit: number;
+  balance: number; // Remaining messages
+  periodStart: string; // ISO 8601 date string
+  periodEnd: string; // ISO 8601 date string
 }
 
 export interface CheckoutSessionResponse {
@@ -34,7 +25,7 @@ export interface CreateCheckoutSessionRequest {
   plan: "PREMIUM";
 }
 
-export type BillingStatusApiResponse = BillingApiResponse<BillingStatus>;
+export type BillingPlanApiResponse = BillingApiResponse<BillingPlan>;
 export type CheckoutSessionApiResponse =
   BillingApiResponse<CheckoutSessionResponse>;
 export type PortalSessionApiResponse =

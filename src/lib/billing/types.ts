@@ -27,7 +27,6 @@ export interface SubscriptionRecord {
   stripePriceId: string | null;
   currentPeriodEnd: Date | null;
   cancelAtPeriodEnd: boolean;
-  provider: "none" | "stripe";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,13 +37,6 @@ export interface StripeEventRecord {
   eventType: string; // Event type (e.g., customer.subscription.updated)
   processedAt: Date;
   createdAt: Date;
-}
-
-export interface BillingStatusResponse {
-  planKey: BillingPlanKey;
-  status: SubscriptionStatus;
-  currentPeriodEnd: string | null; // ISO 8601 date string
-  cancelAtPeriodEnd: boolean;
 }
 
 export interface CheckoutSessionResponse {

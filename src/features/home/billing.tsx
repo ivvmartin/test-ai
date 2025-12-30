@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import {
-  AlertCircle,
   CheckCircle,
   CreditCard,
   Crown,
@@ -15,15 +14,13 @@ import { Button } from "@components/ui/button";
 import { Skeleton } from "@components/ui/skeleton";
 import { UsageIndicator } from "@components/UsageIndicator";
 import {
-  useBillingStatus,
   useCreateCheckoutSession,
   useCreatePortalSession,
 } from "@utils/billing-queries";
 import { useUsageSnapshot } from "@utils/usage-queries";
 
 export function BillingPage() {
-  const { data: usage } = useUsageSnapshot();
-  const { data: billing, isLoading: isLoadingBilling } = useBillingStatus();
+  const { data: usage, isLoading: isLoadingPlan } = useUsageSnapshot();
 
   const checkoutMutation = useCreateCheckoutSession();
   const portalMutation = useCreatePortalSession();
@@ -52,11 +49,7 @@ export function BillingPage() {
     });
   };
 
-  const isPremium = billing?.planKey === "PREMIUM";
-  const isActive =
-    billing?.status === "active" || billing?.status === "trialing";
-  const isPastDue = billing?.status === "past_due";
-  const isCanceled = billing?.cancelAtPeriodEnd;
+  const isPremium = usage?.planKey === "PAID";
 
   return (
     <div className="mx-auto max-w-3xl p-4 md:p-6 lg:p-8">
@@ -75,47 +68,24 @@ export function BillingPage() {
           </p>
         </div>
 
-        {/* Subscription Status */}
+        {/* Plan Status */}
         <div className="space-y-4 mt-8 md:mt-14">
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <h3 className="font-semibold text-sm md:text-base">Абонамент</h3>
 
-            {isLoadingBilling ? (
+            {isLoadingPlan ? (
               <Skeleton className="h-6 w-32" />
-            ) : billing && isPremium ? (
-              <>
-                {isActive ? (
-                  <div className="flex items-center gap-1.5 md:gap-2">
-                    <CheckCircle className="size-4 md:size-5 text-green-700" />
-                    <span className="text-xs md:text-sm font-medium text-green-700">
-                      {billing.status === "trialing"
-                        ? "Пробен период активен"
-                        : "Активен"}
-                    </span>
-                  </div>
-                ) : isPastDue ? (
-                  <div className="flex items-center gap-1.5 md:gap-2">
-                    <AlertCircle className="size-4 md:size-5 text-yellow-600" />
-                    <span className="text-xs md:text-sm font-medium text-yellow-700">
-                      Неуспешно плащане
-                    </span>
-                  </div>
-                ) : null}
-
-                {isCanceled && billing.currentPeriodEnd && (
-                  <div className="flex items-center gap-1.5 md:gap-2 w-full md:w-auto">
-                    <AlertCircle className="size-4 md:size-5 text-orange-600 flex-shrink-0" />
-                    <span className="text-xs md:text-sm font-medium text-orange-700">
-                      Прекратява се на{" "}
-                      {new Date(billing.currentPeriodEnd).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-              </>
+            ) : usage && isPremium ? (
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <CheckCircle className="size-4 md:size-5 text-green-700" />
+                <span className="text-xs md:text-sm font-medium text-green-700">
+                  Активен
+                </span>
+              </div>
             ) : null}
           </div>
 
-          {isLoadingBilling ? (
+          {isLoadingPlan ? (
             <div className="rounded-lg border bg-card p-4 md:p-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -127,7 +97,7 @@ export function BillingPage() {
                 </div>
               </div>
             </div>
-          ) : billing ? (
+          ) : usage ? (
             <div className="rounded-lg border bg-card p-4 md:p-6">
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -143,16 +113,10 @@ export function BillingPage() {
                     )}
                     <div className="min-w-0">
                       <p className="font-semibold text-sm md:text-base">
-                        {isPremium ? "Pro план" : "Безплатен план"}
+                        {isPremium ? "Premium план" : "Безплатен план"}
                       </p>
                       <p className="text-xs md:text-sm text-muted-foreground">
-                        {isPremium
-                          ? usage?.monthlyLimit
-                            ? `${usage.monthlyLimit} съобщения на месец`
-                            : "50 съобщения на месец"
-                          : usage?.monthlyLimit
-                          ? `${usage.monthlyLimit} съобщения на месец`
-                          : "10 съобщения на месец"}
+                        {usage.monthlyLimit} съобщения на месец
                       </p>
                     </div>
                   </div>
@@ -197,41 +161,19 @@ export function BillingPage() {
                       ) : (
                         <>
                           <Crown className="size-3 md:size-4" />
-                          Надградете до Pro
+                          Надградете до Premium
                         </>
                       )}
                     </Button>
                   )}
                 </div>
 
-                {/* Renewal Date */}
-                {isPremium && billing.currentPeriodEnd && !isCanceled && (
+                {/* Period Info */}
+                {isPremium && usage.periodEnd && (
                   <p className="text-xs md:text-sm text-muted-foreground">
-                    {billing.status === "trialing"
-                      ? "Пробният период приключва"
-                      : "Подновява се"}{" "}
-                    на {new Date(billing.currentPeriodEnd).toLocaleDateString()}
+                    Подновява се на{" "}
+                    {new Date(usage.periodEnd).toLocaleDateString()}
                   </p>
-                )}
-
-                {/* Payment Issue Warning */}
-                {isPastDue && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-2 rounded-md border border-yellow-500/20 bg-yellow-50 p-3 dark:bg-yellow-950/20"
-                  >
-                    <AlertCircle className="size-4 mt-0.5 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
-                        Неуспешно плащане
-                      </p>
-                      <p className="text-xs text-yellow-600 dark:text-yellow-500">
-                        Моля, актуализирайте метода си на плащане, за да
-                        продължите да използвате Pro функциите.
-                      </p>
-                    </div>
-                  </motion.div>
                 )}
               </div>
             </div>

@@ -12,7 +12,7 @@ export interface UsageSnapshot {
   used: number;
   remaining: number;
   percentUsed: number;
-  periodKey: string; // YYYY-MM format
+  periodKey: string; // YYYY-MM-DD format (billing period start date)
   periodStart: string; // ISO 8601 date string
   periodEnd: string; // ISO 8601 date string
   source: SubscriptionSource;
@@ -71,7 +71,7 @@ export const PLAN_METADATA: Record<
   },
   PAID: {
     key: "PAID",
-    name: "Pro",
+    name: "Premium",
     color: "#21355a",
     badgeVariant: "default",
   },

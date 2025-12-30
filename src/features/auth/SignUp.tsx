@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Eye, EyeOff, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@components/ui/button";
@@ -93,6 +94,7 @@ export default function SignUp() {
           "Не успяхме да изпратим имейла отново. Моля, опитайте по-късно"
         );
       } else {
+        toast.success("Имейлът е изпратен успешно");
         setResendCooldown(60);
       }
     } catch (error) {
@@ -108,7 +110,7 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -120,7 +122,10 @@ export default function SignUp() {
         let errorMessage =
           "Не успяхме да създадем вашия акаунт. Моля, опитайте отново";
 
-        if (error.message.includes("already registered")) {
+        if (
+          error.message.includes("already registered") ||
+          error.message.includes("User already registered")
+        ) {
           errorMessage =
             "Този имейл вече е регистриран. Моля, влезте или използвайте друг имейл";
         } else if (error.message.includes("Password")) {
@@ -130,6 +135,17 @@ export default function SignUp() {
         }
 
         setApiError(errorMessage);
+        return;
+      }
+
+      if (
+        signUpData?.user &&
+        signUpData.user.identities &&
+        signUpData.user.identities.length === 0
+      ) {
+        setApiError(
+          "Този имейл вече е регистриран. Моля, влезте или използвайте друг имейл"
+        );
         return;
       }
 
@@ -162,7 +178,7 @@ export default function SignUp() {
 
   if (showSuccess) {
     return (
-      <div className="flex h-screen items-center justify-center p-4">
+      <div className="flex h-screen items-center justify-center p-4 pl-4">
         <div className="w-full max-w-lg">
           <div className="rounded-2xl backdrop-blur-sm bg-white/90 p-10 md:p-12 shadow-xl border border-neutral-200">
             <div className="text-center">
@@ -285,11 +301,6 @@ export default function SignUp() {
                   )}
                 </button>
               </div>
-              {formState.errors.password && (
-                <p className="text-sm text-red-600">
-                  {formState.errors.password.message}
-                </p>
-              )}
 
               {/* Password strength indicator */}
               {password && password.length > 0 && (

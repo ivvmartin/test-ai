@@ -14,11 +14,6 @@ import {
 } from "./types";
 import { LimitExceededError, UsageError } from "./errors";
 
-/**
- * Usage Service
- *
- * Stable API contract for usage tracking and enforcement
- */
 export class UsageService {
   private supabase = createAdminClient();
 
@@ -94,7 +89,21 @@ export class UsageService {
     dateNow: Date = new Date()
   ): Promise<UsageSnapshotResult> {
     const entitlement = await this.resolveEntitlement(userId);
-    const period = getPeriodInfo(dateNow);
+
+    // Get user's creation date to use as billing cycle anchor
+    const { data: user, error: userError } =
+      await this.supabase.auth.admin.getUserById(userId);
+
+    if (userError || !user.user.created_at) {
+      throw new UsageError(
+        `Failed to fetch user creation date: ${
+          userError?.message || "No creation date found"
+        }`
+      );
+    }
+
+    const userCreatedAt = new Date(user.user.created_at);
+    const period = getPeriodInfo(userCreatedAt, dateNow);
 
     const { data: counter, error } = await this.supabase
       .from("usage_counters")
@@ -141,7 +150,21 @@ export class UsageService {
     meta?: ConsumeUsageMeta
   ): Promise<ConsumeUsageResult> {
     const entitlement = await this.resolveEntitlement(userId);
-    const period = getPeriodInfo();
+
+    // Get user's creation date to use as billing cycle anchor
+    const { data: user, error: userError } =
+      await this.supabase.auth.admin.getUserById(userId);
+
+    if (userError || !user.user.created_at) {
+      throw new UsageError(
+        `Failed to fetch user creation date: ${
+          userError?.message || "No creation date found"
+        }`
+      );
+    }
+
+    const userCreatedAt = new Date(user.user.created_at);
+    const period = getPeriodInfo(userCreatedAt);
 
     // Use the atomic consume_usage function
     const { data, error } = await this.supabase.rpc("consume_usage", {

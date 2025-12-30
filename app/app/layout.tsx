@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { AppLayout } from "@components/AppLayout";
 import { useAuthStore } from "@store/auth.store";
+import { PageLoader } from "@components/ui/page-loader";
 
 export default function ProtectedLayout({
   children,
@@ -20,12 +21,8 @@ export default function ProtectedLayout({
     }
   }, [isInitialized, isAuthenticated, router]);
 
-  if (!isInitialized) {
-    return null;
-  }
-
-  if (!isAuthenticated) {
-    return null;
+  if (!isInitialized || !isAuthenticated) {
+    return <PageLoader />;
   }
 
   return <AppLayout>{children}</AppLayout>;

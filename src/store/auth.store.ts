@@ -1,45 +1,26 @@
 import { create } from "zustand";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
-
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  avatarUrl?: string;
-}
 
 interface AuthState {
-  user: User | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
 
-  setUser: (user: SupabaseUser | null) => void;
+  setAuthenticated: (authenticated: boolean) => void;
   setInitialized: (initialized: boolean) => void;
   clearAuth: () => void;
 }
 
 /**
  * Auth Store (Supabase-based)
+ *
+ * Manages only authentication state (isAuthenticated, isInitialized).
+ * For user data (email, userId, plan), use the useUserIdentity hook from usage-queries.ts
  */
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
   isAuthenticated: false,
   isInitialized: false,
 
-  setUser: (supabaseUser) => {
-    if (!supabaseUser) {
-      set({ user: null, isAuthenticated: false });
-      return;
-    }
-
-    const user: User = {
-      id: supabaseUser.id,
-      email: supabaseUser.email ?? "",
-      name: supabaseUser.user_metadata?.name,
-      avatarUrl: supabaseUser.user_metadata?.avatar_url,
-    };
-
-    set({ user, isAuthenticated: true });
+  setAuthenticated: (authenticated) => {
+    set({ isAuthenticated: authenticated });
   },
 
   setInitialized: (initialized) => {
@@ -47,6 +28,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   clearAuth: () => {
-    set({ user: null, isAuthenticated: false });
+    set({ isAuthenticated: false });
   },
 }));

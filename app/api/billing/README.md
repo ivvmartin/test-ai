@@ -78,9 +78,11 @@ curl -X POST http://localhost:3000/api/billing/portal-session \
 
 ---
 
-### `GET /api/billing/status`
+### `GET /api/billing/plan`
 
-Returns the current user's billing/subscription status.
+Returns the current user's plan information with essential data only.
+
+**Frontend calculates:** `used`, `remaining`, `percentUsed`, `periodKey`
 
 **Authentication:** Required (HTTP-only cookies via Supabase Auth)
 
@@ -90,29 +92,28 @@ Returns the current user's billing/subscription status.
 {
   "success": true,
   "data": {
-    "planKey": "PREMIUM",
-    "status": "active",
-    "currentPeriodEnd": "2025-01-18T12:00:00.000Z",
-    "cancelAtPeriodEnd": false
+    "plan": "PAID",
+    "monthlyLimit": 50,
+    "balance": 35,
+    "periodStart": "2025-01-01T00:00:00.000Z",
+    "periodEnd": "2025-02-01T00:00:00.000Z"
   }
 }
 ```
 
+**Response Fields:**
+
+- `plan` - Plan key: `FREE`, `PAID`, or `INTERNAL`
+- `monthlyLimit` - Total messages allowed per month
+- `balance` - Remaining messages available
+- `periodStart` - Billing period start (ISO 8601)
+- `periodEnd` - Billing period end (ISO 8601)
+
 **Plan Keys:**
 
-- `FREE` - Free plan (no Stripe subscription)
-- `PREMIUM` - Premium plan (active Stripe subscription)
-
-**Status Values:**
-
-- `inactive` - FREE plan (no Stripe subscription)
-- `active` - Active paid subscription
-- `trialing` - In trial period
-- `past_due` - Payment failed
-- `canceled` - Canceled but still active until period end
-- `unpaid` - Payment failed and grace period expired
-- `incomplete` - Initial payment incomplete
-- `incomplete_expired` - Initial payment incomplete and expired
+- `FREE` - Free plan (10 messages/month)
+- `PAID` - Premium plan (50 messages/month)
+- `INTERNAL` - Internal/admin plan (unlimited)
 
 **Error Responses:**
 
@@ -122,7 +123,7 @@ Returns the current user's billing/subscription status.
 **Example:**
 
 ```bash
-curl http://localhost:3000/api/billing/status \
+curl http://localhost:3000/api/billing/plan \
   -H "Cookie: sb-access-token=YOUR_SESSION_COOKIE"
 ```
 

@@ -5,9 +5,9 @@ import { UnauthorizedError } from "@/lib/auth/errors";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * GET /api/chat/conversations/[id]
+ * GET /api/chat/chats/[id]
  *
- * Returns all messages for a specific conversation
+ * Returns all messages for a specific chat
  */
 export async function GET(
   request: NextRequest,
@@ -89,10 +89,7 @@ export async function GET(
       );
     }
 
-    console.error(
-      "Unexpected error in GET /api/chat/conversations/[id]:",
-      error
-    );
+    console.error("Unexpected error in GET /api/chat/chats/[id]:", error);
     return NextResponse.json(
       {
         success: false,
@@ -107,9 +104,9 @@ export async function GET(
 }
 
 /**
- * PATCH /api/chat/conversations/[id]
+ * PATCH /api/chat/chats/[id]
  *
- * Updates a conversation's title
+ * Updates a chat's title
  */
 export async function PATCH(
   request: NextRequest,
@@ -184,10 +181,7 @@ export async function PATCH(
       );
     }
 
-    console.error(
-      "Unexpected error in PATCH /api/chat/conversations/[id]:",
-      error
-    );
+    console.error("Unexpected error in PATCH /api/chat/chats/[id]:", error);
     return NextResponse.json(
       {
         success: false,
@@ -202,9 +196,9 @@ export async function PATCH(
 }
 
 /**
- * DELETE /api/chat/conversations/[id]
+ * DELETE /api/chat/chats/[id]
  *
- * Deletes a specific conversation and all its messages (cascade)
+ * Deletes a specific chat and all its messages (cascade)
  */
 export async function DELETE(
   request: NextRequest,
@@ -253,10 +247,7 @@ export async function DELETE(
       );
     }
 
-    console.error(
-      "Unexpected error in DELETE /api/chat/conversations/[id]:",
-      error
-    );
+    console.error("Unexpected error in DELETE /api/chat/chats/[id]:", error);
     return NextResponse.json(
       {
         success: false,

@@ -62,16 +62,14 @@ import {
   TooltipTrigger,
 } from "@components/ui/tooltip";
 import { useAuthStore } from "@store/auth.store";
+import { useCreateCheckoutSession } from "@utils/billing-queries";
 import {
-  useBillingStatus,
-  useCreateCheckoutSession,
-} from "@utils/billing-queries";
-import { getMessages } from "@utils/chat-api";
-import { useDeleteConversationMutation } from "@utils/chat-mutations";
+  useDeleteConversationMutation,
+  useExportConversationMutation,
+} from "@utils/chat-mutations";
 import { useConversationsQuery } from "@utils/chat-queries";
-import { exportConversationToPDF } from "@utils/export-pdf";
 import { queryClient } from "@utils/queries";
-import { useUsageSnapshot } from "@utils/usage-queries";
+import { useUsageSnapshot, useUserIdentity } from "@utils/usage-queries";
 
 function AppSidebar() {
   const location = useLocation();
@@ -85,9 +83,10 @@ function AppSidebar() {
   } | null>(null);
 
   const { data: conversations = [], isLoading } = useConversationsQuery();
-  const { data: billing } = useBillingStatus();
-  const checkoutMutation = useCreateCheckoutSession();
+  const { data: usage } = useUsageSnapshot();
 
+  const checkoutMutation = useCreateCheckoutSession();
+  const exportConversationMutation = useExportConversationMutation();
   const deleteConversationMutation = useDeleteConversationMutation({
     onSuccess: () => {
       toast.success("Разговорът е изтрит успешно");
@@ -96,7 +95,7 @@ function AppSidebar() {
     },
     onError: (error) => {
       console.error("Failed to delete conversation:", error);
-      toast.error("Неуспешно изтриване на разговора. Моля, опитайте отново.");
+      toast.error("Неуспешно изтриване на разговора. Моля, опитайте отново");
     },
   });
 
@@ -128,29 +127,17 @@ function AppSidebar() {
     deleteConversationMutation.mutate(conversationToDelete.id);
   };
 
-  const handleExportConversation = async (id: string, e?: React.MouseEvent) => {
+  const handleExportConversation = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
 
-    try {
-      const conversation = conversations.find((c) => c.id === id);
-      const conversationTitle = conversation?.title || "Нов разговор";
-
-      const messages = await getMessages(id);
-
-      if (!messages || messages.length === 0) {
-        toast.error("Няма съобщения за експортиране");
-        return;
-      }
-
-      await exportConversationToPDF(conversationTitle, messages);
-    } catch (error) {
-      console.error("Failed to export conversation:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Неуспешен експорт на разговора. Моля, опитайте отново."
-      );
-    }
+    toast.promise(exportConversationMutation.mutateAsync(id), {
+      loading: "Експортиране на разговора...",
+      success: "Разговорът е експортиран успешно",
+      error: (err) =>
+        err instanceof Error
+          ? err.message
+          : "Неуспешен експорт на разговора. Моля, опитайте отново",
+    });
   };
 
   const handleConversationClick = (id: string) => {
@@ -169,13 +156,13 @@ function AppSidebar() {
         toast.error(
           error instanceof Error
             ? error.message
-            : "Неуспешно създаване на сесия за плащане. Моля, опитайте отново."
+            : "Неуспешно създаване на сесия за плащане. Моля, опитайте отново"
         );
       },
     });
   };
 
-  const isFreeUser = billing?.planKey === "FREE";
+  const isFreeUser = usage?.planKey === "FREE";
 
   return (
     <Sidebar>
@@ -209,7 +196,7 @@ function AppSidebar() {
                   <div className="flex items-center gap-2">
                     <Crown className="size-5" />
                     <span className="font-semibold text-sm">
-                      Надградете до Pro
+                      Надградете до Premium
                     </span>
                   </div>
                   <p className="text-xs leading-relaxed text-white/90">
@@ -262,7 +249,7 @@ function AppSidebar() {
 
         <SidebarGroup>
           <div className="flex items-center justify-between">
-            <SidebarGroupLabel>Разговори (последните 10)</SidebarGroupLabel>
+            <SidebarGroupLabel>Чатове (последните 10)</SidebarGroupLabel>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -301,29 +288,29 @@ function AppSidebar() {
                   animate={{ opacity: 1 }}
                   className="px-2 py-4 text-center text-sm text-muted-foreground"
                 >
-                  Все още няма разговори
+                  Все още няма чатове
                 </motion.div>
               ) : (
                 conversations.map((conversation) => (
                   <div key={conversation.id}>
                     <SidebarMenuItem className="group/conversation-item">
-                      <div className="relative flex w-full items-center">
+                      <div className="relative flex w-full items-center gap-1">
                         <SidebarMenuButton
                           isActive={isConversationActive(conversation.id)}
                           onClick={() =>
                             handleConversationClick(conversation.id)
                           }
-                          className="flex-1"
+                          className="flex-1 min-w-0 pr-8"
                         >
                           <MessageSquare className="size-4 shrink-0" />
-                          <span className="truncate">
+                          <span className="truncate block overflow-hidden text-ellipsis whitespace-nowrap">
                             {conversation.title || "Нов разговор"}
                           </span>
                         </SidebarMenuButton>
                         <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
                             <button
-                              className="absolute right-2 flex size-6 shrink-0 items-center justify-center rounded-md opacity-0 outline-none transition-opacity hover:bg-accent hover:opacity-100 focus-visible:opacity-100 group-hover/conversation-item:opacity-100 data-[state=open]:bg-accent data-[state=open]:opacity-100"
+                              className="absolute right-1 flex size-7 shrink-0 items-center justify-center rounded-md opacity-0 outline-none transition-opacity hover:bg-accent hover:opacity-100 focus-visible:opacity-100 group-hover/conversation-item:opacity-100 data-[state=open]:bg-accent data-[state=open]:opacity-100"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <MoreHorizontal className="size-4" />
@@ -434,11 +421,12 @@ function TopBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const supabase = createClient();
-  const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const { data: userIdentity } = useUserIdentity();
   const { data: usage } = useUsageSnapshot();
+  const { open } = useSidebar();
+
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const getPageTitle = () => {
     if (location.pathname.startsWith("/app/chat")) {
@@ -454,7 +442,6 @@ function TopBar() {
   };
 
   const handleLogout = async () => {
-    setIsLoggingOut(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -472,15 +459,22 @@ function TopBar() {
       clearAuth();
       queryClient.clear();
       navigate("/auth/sign-in");
-    } finally {
-      setIsLoggingOut(false);
     }
   };
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-2 md:px-6 overflow-x-auto">
       <div className="flex items-center gap-1.5 md:gap-2 min-w-0">
-        <SidebarTrigger className="flex-shrink-0" />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <SidebarTrigger className="flex-shrink-0" />
+            </TooltipTrigger>
+            <TooltipContent>
+              {open ? "Скрий страничната лента" : "Покажи страничната лента"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <Separator orientation="vertical" className="h-6 flex-shrink-0" />
         <motion.h1
           key={location.pathname}
@@ -502,12 +496,13 @@ function TopBar() {
             <button className="flex cursor-pointer items-center gap-1 md:gap-2.5 rounded-lg px-1 md:px-2.5 py-1 md:py-1.5 transition-colors hover:bg-accent">
               <Avatar className="size-7 bg-muted rounded-2xl flex-shrink-0">
                 <AvatarFallback className="bg-muted rounded-2xl text-xs flex items-center justify-center">
-                  {user?.email.replace(/@.*$/, "")[0].toUpperCase()}
+                  {userIdentity?.email.replace(/@.*$/, "")[0].toUpperCase() ||
+                    "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start">
                 <span className="text-xs md:text-[13px] font-medium whitespace-nowrap">
-                  {user?.email || ""}
+                  {userIdentity?.email || ""}
                 </span>
                 {usage && (
                   <span

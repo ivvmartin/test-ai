@@ -2,41 +2,69 @@ import { NextResponse } from "next/server";
 
 import { requireUser } from "@/lib/auth/requireUser";
 import { UnauthorizedError } from "@/lib/auth/errors";
+import { usageService } from "@/lib/usage";
 
 /**
  * GET /api/me
  *
  * Returns the authenticated user's information.
  *
- * Authentication: Required (HTTP-only cookies)
- *
  * Success Response (200):
  * {
- *   "userId": "uuid",
- *   "email": "user@example.com"
+ *   "success": true,
+ *   "data": {
+ *     "userId": "uuid",
+ *     "email": "user@example.com",
+ *     "plan": "FREE" | "PAID" | "INTERNAL"
+ *   }
  * }
  *
  * Error Response (401):
  * {
- *   "error": "Authentication required"
+ *   "success": false,
+ *   "error": {
+ *     "message": "Authentication required",
+ *     "code": "UNAUTHORIZED"
+ *   }
  * }
  */
 export async function GET() {
   try {
     const user = await requireUser();
 
+    const entitlement = await usageService.resolveEntitlement(user.userId);
+
     return NextResponse.json({
-      userId: user.userId,
-      email: user.email,
+      success: true,
+      data: {
+        userId: user.userId,
+        email: user.email,
+        plan: entitlement.planKey,
+      },
     });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            message: error.message,
+            code: error.code,
+          },
+        },
+        { status: 401 }
+      );
     }
 
     console.error("Unexpected error in /api/me:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        success: false,
+        error: {
+          message: "Internal server error",
+          code: "INTERNAL_ERROR",
+        },
+      },
       { status: 500 }
     );
   }

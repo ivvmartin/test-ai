@@ -122,9 +122,9 @@ export function UsageIndicator({
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold">Потребление този месец</h3>
+          <h3 className="text-sm font-semibold">Потребление за периода</h3>
           <p className="text-xs text-muted-foreground">
-            Период: {formatPeriodKey(usage.periodKey)}
+            {formatPeriodDates(usage.periodStart, usage.periodEnd)}
           </p>
         </div>
         {showPlanBadge && (
@@ -271,8 +271,18 @@ function UsageIndicatorSkeleton({ variant }: { variant: Props["variant"] }) {
   );
 }
 
-function formatPeriodKey(periodKey: string): string {
-  const [year, month] = periodKey.split("-");
-  const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-  return date.toLocaleDateString("bg-BG", { month: "long", year: "numeric" });
+function formatPeriodDates(periodStart: string, periodEnd: string): string {
+  const startDate = new Date(periodStart);
+  const endDate = new Date(periodEnd);
+
+  const formatOptions: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  };
+
+  const start = startDate.toLocaleDateString("bg-BG", formatOptions);
+  const end = endDate.toLocaleDateString("bg-BG", formatOptions);
+
+  return `${start} - ${end}`;
 }

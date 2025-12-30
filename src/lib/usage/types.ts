@@ -37,16 +37,14 @@ export type SubscriptionStatus =
   | "active"
   | "past_due"
   | "canceled";
-export type SubscriptionProvider = "none" | "stripe";
 
 export interface Subscription {
   id: string;
   userId: string;
   status: SubscriptionStatus;
-  provider: SubscriptionProvider;
   currentPeriodEnd: Date | null;
-  providerCustomerId: string | null;
-  providerSubscriptionId: string | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,7 +54,7 @@ export interface Subscription {
 export interface UsageCounter {
   id: string;
   userId: string;
-  periodKey: string; // Format: YYYY-MM
+  periodKey: string; // Format: YYYY-MM-DD (billing period start date)
   used: number;
   createdAt: Date;
   updatedAt: Date;
@@ -118,15 +116,68 @@ export interface PeriodInfo {
 }
 
 /**
- * Get period info for a given date (defaults to now)
+ * Get period info for a given date based on user's billing cycle anchor
  */
-export function getPeriodInfo(dateNow: Date = new Date()): PeriodInfo {
-  const year = dateNow.getUTCFullYear();
-  const month = dateNow.getUTCMonth(); // 0-11
+export function getPeriodInfo(
+  userCreatedAt: Date,
+  dateNow: Date = new Date()
+): PeriodInfo {
+  // 1. Normalize dates to UTC midnight for consistent calculations
+  const anchor = new Date(
+    Date.UTC(
+      userCreatedAt.getUTCFullYear(),
+      userCreatedAt.getUTCMonth(),
+      userCreatedAt.getUTCDate(),
+      0,
+      0,
+      0,
+      0
+    )
+  );
 
-  const periodKey = `${year}-${String(month + 1).padStart(2, "0")}`;
-  const periodStart = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
-  const periodEnd = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0, 0));
+  const now = new Date(
+    Date.UTC(
+      dateNow.getUTCFullYear(),
+      dateNow.getUTCMonth(),
+      dateNow.getUTCDate(),
+      0,
+      0,
+      0,
+      0
+    )
+  );
+
+  // 2. Calculate how many months have passed since the anchor date
+  const anchorYear = anchor.getUTCFullYear();
+  const anchorMonth = anchor.getUTCMonth();
+  const anchorDay = anchor.getUTCDate();
+
+  const nowYear = now.getUTCFullYear();
+  const nowMonth = now.getUTCMonth();
+  const nowDay = now.getUTCDate();
+
+  // 3. Calculate total months difference
+  let monthsPassed = (nowYear - anchorYear) * 12 + (nowMonth - anchorMonth);
+
+  // 4. If we haven't reached the anchor day in the current month, we're still in the previous period
+  if (nowDay < anchorDay) {
+    monthsPassed--;
+  }
+
+  // 5. Calculate period start (anchor + monthsPassed months)
+  const periodStart = new Date(
+    Date.UTC(anchorYear, anchorMonth + monthsPassed, anchorDay, 0, 0, 0, 0)
+  );
+
+  // 6. Calculate period end (anchor + (monthsPassed + 1) months)
+  const periodEnd = new Date(
+    Date.UTC(anchorYear, anchorMonth + monthsPassed + 1, anchorDay, 0, 0, 0, 0)
+  );
+
+  // 7. Format period key as YYYY-MM-DD (using period start date)
+  const periodKey = `${periodStart.getUTCFullYear()}-${String(
+    periodStart.getUTCMonth() + 1
+  ).padStart(2, "0")}-${String(periodStart.getUTCDate()).padStart(2, "0")}`;
 
   return {
     periodKey,

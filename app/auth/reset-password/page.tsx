@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import ResetPassword from "@features/auth/ResetPassword";
 import { useAuthStore } from "@store/auth.store";
+import { PageLoader } from "@components/ui/page-loader";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -17,12 +18,8 @@ export default function ResetPasswordPage() {
     }
   }, [isInitialized, isAuthenticated, router]);
 
-  if (!isInitialized) {
-    return null;
-  }
-
-  if (isAuthenticated) {
-    return null;
+  if (!isInitialized || isAuthenticated) {
+    return <PageLoader />;
   }
 
   return <ResetPassword />;

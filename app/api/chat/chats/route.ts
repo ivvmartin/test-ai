@@ -4,25 +4,9 @@ import { UnauthorizedError } from "@/lib/auth/errors";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * GET /api/chat/conversations
+ * GET /api/chat/chats
  *
- * Returns the authenticated user's conversations (up to 10 most recent).
- *
- * Authentication: Required (HTTP-only cookies)
- *
- * Success Response (200):
- * {
- *   "success": true,
- *   "data": [
- *     {
- *       "id": "uuid",
- *       "userId": "uuid",
- *       "title": "Conversation title",
- *       "createdAt": "2025-01-01T00:00:00.000Z",
- *       "updatedAt": "2025-01-01T00:00:00.000Z"
- *     }
- *   ]
- * }
+ * Returns the authenticated user's chats (up to 10 most recent)
  */
 export async function GET() {
   try {
@@ -79,7 +63,7 @@ export async function GET() {
       );
     }
 
-    console.error("Unexpected error in GET /api/chat/conversations:", error);
+    console.error("Unexpected error in GET /api/chat/chats:", error);
     return NextResponse.json(
       {
         success: false,
@@ -94,13 +78,13 @@ export async function GET() {
 }
 
 /**
- * POST /api/chat/conversations
+ * POST /api/chat/chats
  *
- * Creates a new conversation for the authenticated user.
+ * Creates a new chat for the authenticated user.
  *
  * Request Body:
  * {
- *   "title": "Optional conversation title"
+ *   "title": "Optional chat title"
  * }
  *
  * Success Response (201):
@@ -175,7 +159,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error("Unexpected error in POST /api/chat/conversations:", error);
+    console.error("Unexpected error in POST /api/chat/chats:", error);
     return NextResponse.json(
       {
         success: false,

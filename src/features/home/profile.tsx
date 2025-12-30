@@ -3,8 +3,8 @@
 import { useNavigate } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/browser";
 import { useAuthStore } from "@/store/auth.store";
-import { useBillingStatus } from "@/utils/billing-queries";
 import { queryClient } from "@/utils/queries";
+import { useUsageSnapshot } from "@/utils/usage-queries";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, LogOut, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -29,7 +29,7 @@ export function Profile() {
   const supabase = createClient();
 
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  const { data: billingStatus } = useBillingStatus();
+  const { data: usage } = useUsageSnapshot();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -61,10 +61,7 @@ export function Profile() {
   };
 
   const handleDeleteAccount = async () => {
-    if (
-      billingStatus?.status === "active" ||
-      billingStatus?.status === "trialing"
-    ) {
+    if (usage?.planKey === "PAID") {
       toast.error("Абонаментът ви е активен", {
         description:
           "Абонаментът ви не трябва да е активен, за да изтриете акаунта си",

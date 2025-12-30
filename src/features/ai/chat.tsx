@@ -1,224 +1,26 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { Bot, Copy, CornerRightUp } from "lucide-react";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useNavigate, useParams } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
-import type { Message } from "@/types/chat.types";
-import { MarkdownContent } from "@components/MarkdownContent";
-import { Avatar, AvatarFallback } from "@components/ui/avatar";
-import { BouncingDots } from "@components/ui/bouncing-dots";
+import { useSidebar } from "@components/ui/sidebar";
 import { Skeleton } from "@components/ui/skeleton";
-import { Textarea } from "@components/ui/textarea";
-import { useAuthStore } from "@store/auth.store";
 import {
   useCreateConversationMutation,
   useStreamingMessage,
 } from "@utils/chat-mutations";
 import { useMessagesQuery } from "@utils/chat-queries";
-import { useAutoResizeTextarea } from "@utils/hooks";
-import { useUsageState } from "@utils/usage-queries";
-
-const MessageItem = memo(
-  ({ message, userEmail }: { message: Message; userEmail?: string }) => {
-    if (message.role === "user") {
-      return (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex flex-row gap-3 px-1 py-2 sm:gap-4 sm:px-2"
-        >
-          <div className="bg-muted flex size-8 shrink-0 items-center justify-center rounded-full">
-            <span className="font-medium text-foreground text-sm">
-              <Avatar className="size-8">
-                <AvatarFallback className="bg-muted rounded-2xl text-xs flex items-center justify-center">
-                  {userEmail?.replace(/@.*$/, "")[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </span>
-          </div>
-          <div className="flex min-w-0 flex-1 items-center">
-            <p className="text-foreground break-words text-[0.9rem] leading-relaxed">
-              {message.content}
-            </p>
-          </div>
-        </motion.div>
-      );
-    }
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-        className="bg-muted/30 group relative flex gap-3 rounded-xl px-3 py-4 sm:gap-4 sm:px-4 sm:py-5"
-      >
-        <Bot className="bg-primary/10 text-primary flex size-8 shrink-0 rounded-full p-1.5" />
-        {message.content === "..." ? (
-          <div className="flex min-w-0 flex-1 items-center">
-            <BouncingDots />
-          </div>
-        ) : (
-          <>
-            <div
-              className={cn(
-                "text-foreground min-w-0 flex-1 overflow-x-auto",
-                message.content === "Нещо се обърка. Моля, опитайте отново"
-                  ? "rounded-lg border border-destructive/10 bg-destructive/10 p-3"
-                  : ""
-              )}
-            >
-              <MarkdownContent content={message.content} />
-            </div>
-            <button
-              type="button"
-              title="Копирай в клипборда"
-              className="bg-background/80 hover:bg-background border-border/50 absolute top-3 right-3 rounded-md border p-1.5 opacity-0 shadow-sm transition-all hover:opacity-100 focus:opacity-100 group-hover:opacity-100"
-              onClick={() => {
-                navigator.clipboard.writeText(message.content);
-                toast.success("Копирано в клипборда");
-              }}
-            >
-              <Copy className="text-muted-foreground h-3.5 w-3.5" />
-            </button>
-          </>
-        )}
-      </motion.div>
-    );
-  },
-  (prevProps, nextProps) => {
-    return (
-      prevProps.message.id === nextProps.message.id &&
-      prevProps.message.content === nextProps.message.content
-    );
-  }
-);
-
-MessageItem.displayName = "MessageItem";
-
-function AiInput({
-  value,
-  onChange,
-  onSubmit,
-  onKeyDown,
-  disabled,
-  isNearLimit,
-  isAtLimit,
-  usage,
-}: {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onSubmit: () => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  disabled?: boolean;
-  isNearLimit?: boolean;
-  isAtLimit?: boolean;
-  usage?: {
-    used: number;
-    monthlyLimit: number;
-    remaining: number;
-    periodEnd: string;
-  };
-}) {
-  const { textareaRef, adjustHeight } = useAutoResizeTextarea({
-    minHeight: 50,
-    maxHeight: 200,
-  });
-
-  const showWarning = isNearLimit || isAtLimit;
-
-  return (
-    <div className="w-full">
-      <div className="relative mx-auto w-full max-w-4xl rounded-2xl bg-muted/50 shadow-lg">
-        {/* Warning Banner */}
-        {showWarning && (
-          <div
-            className={cn(
-              "flex items-center justify-between rounded-t-2xl border border-b-0 px-5 py-2.5 transition-all duration-200 bg-background"
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  "font-medium text-xs",
-                  isAtLimit ? "text-destructive" : "text-yellow-700"
-                )}
-              >
-                {usage?.remaining || 0} оставащи съобщения
-              </span>
-            </div>
-            <a
-              href="/app/billing"
-              className={cn(
-                "font-medium underline-offset-4 hover:underline text-xs",
-                isAtLimit ? "text-destructive" : "text-yellow-700"
-              )}
-            >
-              {isAtLimit
-                ? "Надградете, за да продължите"
-                : "Надградете за повече"}
-            </a>
-          </div>
-        )}
-
-        <Textarea
-          ref={textareaRef}
-          id="ai-input-06"
-          placeholder={
-            isAtLimit
-              ? "Лимитът за използване е достигнат. Надградете, за да продължите."
-              : "Напишете вашия въпрос за ДДС тук…"
-          }
-          className={cn(
-            "bg-background text-foreground placeholder:text-muted-foreground/70 w-full resize-none border border-input py-4 pr-12 pl-5 leading-relaxed",
-            "min-h-[56px] transition-all duration-200 shadow-sm",
-            "focus-visible:border-ring focus-visible:ring-[1px] focus-visible:ring-ring/50",
-            "placeholder:text-sm sm:placeholder:text-sm",
-            showWarning ? "rounded-b-2xl rounded-t-none" : "rounded-2xl",
-            disabled && "cursor-not-allowed opacity-60"
-          )}
-          value={value}
-          onKeyDown={onKeyDown}
-          onChange={(e) => {
-            onChange(e);
-            adjustHeight();
-          }}
-          disabled={disabled}
-        />
-        <button
-          onClick={onSubmit}
-          className={cn(
-            "absolute bottom-3 right-3 rounded-lg p-2 transition-all duration-200",
-            value.trim() && !disabled
-              ? "bg-primary/10 hover:bg-primary/20 opacity-100"
-              : "bg-muted cursor-not-allowed opacity-40"
-          )}
-          type="button"
-          disabled={!value.trim() || disabled}
-          aria-label="Send message"
-        >
-          <CornerRightUp
-            className={cn(
-              "h-5 w-5 transition-colors",
-              value.trim() && !disabled
-                ? "text-primary"
-                : "text-muted-foreground"
-            )}
-          />
-        </button>
-      </div>
-    </div>
-  );
-}
+import { useUsageState, useUserIdentity } from "@utils/usage-queries";
+import { AiInput, ChatNotFound, ChatWelcome, MessageItem } from "./components";
 
 export function ChatPage() {
   const { conversationId } = useParams<{ conversationId?: string }>();
   const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
+  const { data: userIdentity } = useUserIdentity();
+  const { state: sidebarState, isMobile } = useSidebar();
 
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -228,14 +30,13 @@ export function ChatPage() {
     data: messages = [],
     isLoading: isLoadingMessages,
     dataUpdatedAt,
+    error: messagesError,
   } = useMessagesQuery(conversationId);
-
   const { isNearLimit, isAtLimit, usage } = useUsageState();
 
   const showSkeleton =
     isLoadingMessages && messages.length === 0 && dataUpdatedAt === 0;
 
-  // Check if there's a loading message (AI is thinking)
   const hasLoadingMessage = messages.some((msg) => msg.content === "...");
 
   const createConversationMutation = useCreateConversationMutation({
@@ -303,11 +104,12 @@ export function ChatPage() {
       const userMessageContent = input.trim();
       setInput("");
 
+      // Set loading state immediately for instant feedback
+      setIsGenerating(true);
+
       let targetConversationId = conversationId;
 
       if (!targetConversationId) {
-        setIsGenerating(true);
-
         try {
           const newConv = await createConversationMutation.mutateAsync({
             title: "Нов разговор",
@@ -319,14 +121,10 @@ export function ChatPage() {
           await new Promise((resolve) => setTimeout(resolve, 100));
         } catch (error) {
           console.error("Failed to create conversation:", error);
-          toast.error(
-            "Неуспешно създаване на разговор. Моля, опитайте отново."
-          );
+          toast.error("Неуспешно създаване на разговор. Моля, опитайте отново");
           setIsGenerating(false);
           return;
         }
-      } else {
-        setIsGenerating(true);
       }
 
       await sendMessage(userMessageContent, targetConversationId);
@@ -370,43 +168,36 @@ export function ChatPage() {
     ]
   );
 
+  // Check if conversation was not found (404 error)
+  const isNotFound =
+    messagesError &&
+    (messagesError.message.includes("404") ||
+      messagesError.message.includes("not found"));
+
+  if (isNotFound) {
+    return <ChatNotFound />;
+  }
+
   if (!conversationId) {
     return (
-      <div className="flex h-[calc(70vh-2.5rem)] w-full items-center justify-center p-4">
-        <div className="flex w-full max-w-xl flex-col items-center justify-center space-y-10">
-          <div className="space-y-4 text-center">
-            <h1 className="font-semibold text-2xl tracking-tight md:text-2xl">
-              Незабавна яснота относно българския ДДС
-            </h1>
-            <p className="text-muted-foreground text-base md:text-md">
-              Задайте въпрос по ЗДДС и получете ясно и структурирано обяснение,
-              съобразено с конкретния ви случай
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="w-full">
-            <AiInput
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onSubmit={handleSubmit}
-              onKeyDown={handleKeyDown}
-              disabled={isAtLimit}
-              isNearLimit={isNearLimit}
-              isAtLimit={isAtLimit}
-              usage={
-                usage
-                  ? {
-                      used: usage.used,
-                      monthlyLimit: usage.monthlyLimit,
-                      remaining: usage.remaining,
-                      periodEnd: usage.periodEnd,
-                    }
-                  : undefined
+      <ChatWelcome
+        input={input}
+        onInputChange={(e) => setInput(e.target.value)}
+        onSubmit={handleSubmit}
+        onKeyDown={handleKeyDown}
+        isAtLimit={isAtLimit}
+        isNearLimit={isNearLimit}
+        usage={
+          usage
+            ? {
+                used: usage.used,
+                monthlyLimit: usage.monthlyLimit,
+                remaining: usage.remaining,
+                periodEnd: usage.periodEnd,
               }
-            />
-          </form>
-        </div>
-      </div>
+            : undefined
+        }
+      />
     );
   }
 
@@ -442,7 +233,10 @@ export function ChatPage() {
             <AnimatePresence mode="popLayout">
               {messages.map((message) => (
                 <div key={message.id} className="mb-6 last:mb-0">
-                  <MessageItem message={message} userEmail={user?.email} />
+                  <MessageItem
+                    message={message}
+                    userEmail={userIdentity?.email}
+                  />
                 </div>
               ))}
             </AnimatePresence>
@@ -452,7 +246,14 @@ export function ChatPage() {
       </div>
 
       {/* Input area */}
-      <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6 md:left-[var(--sidebar-width)] md:peer-data-[state=collapsed]:left-0">
+      <div
+        className={cn(
+          "pointer-events-none fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6 transition-[left] duration-200 ease-linear",
+          !isMobile &&
+            sidebarState === "expanded" &&
+            "md:left-[var(--sidebar-width)]"
+        )}
+      >
         <div className="mx-auto w-full max-w-2xl">
           <form onSubmit={handleSubmit} className="pointer-events-auto">
             <AiInput

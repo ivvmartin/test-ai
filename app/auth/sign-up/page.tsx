@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import SignUp from "@features/auth/SignUp";
 import { useAuthStore } from "@store/auth.store";
+import { PageLoader } from "@components/ui/page-loader";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -17,12 +18,8 @@ export default function SignUpPage() {
     }
   }, [isInitialized, isAuthenticated, router]);
 
-  if (!isInitialized) {
-    return null;
-  }
-
-  if (isAuthenticated) {
-    return null;
+  if (!isInitialized || isAuthenticated) {
+    return <PageLoader />;
   }
 
   return <SignUp />;

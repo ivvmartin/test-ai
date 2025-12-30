@@ -62,7 +62,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center p-4">
+    <div className="flex h-screen items-center justify-center p-4 pl-4">
       <div className="w-full max-w-lg">
         <div className="rounded-2xl backdrop-blur-sm bg-white/90 p-10 md:p-12 shadow-xl border border-neutral-200">
           {/* Form Header */}

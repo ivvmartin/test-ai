@@ -15,6 +15,7 @@ import {
   addMessageWithStreaming,
   createConversation,
   deleteConversation,
+  exportConversationToPdf,
 } from "./chat-api";
 import { usageKeys } from "./usage-queries";
 
@@ -189,7 +190,6 @@ export function useStreamingMessage(
         }
       );
 
-      // Optimistically add assistant message with loading indicator
       const assistantMessageId = `temp-assistant-${Date.now()}`;
       const assistantMessage: Message = {
         id: assistantMessageId,
@@ -373,12 +373,10 @@ export function useStreamingMessage(
         queryClient.setQueryData<Message[]>(
           chatQueryKeys.messages(targetConversationId),
           (old) => {
-            // If no messages in cache, create the error message from scratch
             if (!old || old.length === 0) {
               console.warn(
                 "🔴 [Catch Block] Cache was cleared! Recreating messages..."
               );
-              // Recreate both user and assistant messages
               const userMessage: Message = {
                 id: `temp-user-${Date.now()}`,
                 conversationId: targetConversationId,
@@ -398,7 +396,6 @@ export function useStreamingMessage(
               return [userMessage, assistantMessage];
             }
 
-            // Update the assistant message with error text
             const updated = old.map((msg) =>
               msg.id === assistantMessageId
                 ? { ...msg, content: "Нещо се обърка. Моля, опитайте отново" }
@@ -421,4 +418,33 @@ export function useStreamingMessage(
     streamedText: state.streamedText,
     error: state.error,
   };
+}
+
+interface ExportConversationMutationOptions
+  extends Omit<
+    UseMutationOptions<{ blob: Blob; filename: string }, Error, string>,
+    "mutationFn"
+  > {}
+
+/**
+ * Export conversation to PDF mutation
+ * Automatically triggers download on success
+ */
+export function useExportConversationMutation(
+  options?: ExportConversationMutationOptions
+) {
+  return useMutation<{ blob: Blob; filename: string }, Error, string>({
+    mutationFn: exportConversationToPdf,
+    onSuccess: ({ blob, filename }) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    },
+    ...(options as any),
+  });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Hash, Shield } from "lucide-react";
+import { FileText, Shield } from "lucide-react";
 import { memo, useEffect, useState } from "react";
 
 import {
@@ -17,8 +17,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
-} from "@/components/ui/sidebar";
-import { Link, useLocation, useNavigate } from "@/lib/navigation";
+} from "@components/ui/sidebar";
+import { Link } from "@/lib/navigation";
 
 type SectionId = "tos" | "pp";
 
@@ -61,29 +61,11 @@ interface SectionHeadingProps {
 }
 
 function SectionHeading({ id, children }: SectionHeadingProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const handleAnchorClick = () => {
-    const newUrl = `${location.pathname}#${id}`;
-    navigate(newUrl, { replace: true });
-
-    const fullUrl = `${window.location.origin}${newUrl}`;
-    navigator.clipboard.writeText(fullUrl);
-  };
-
   return (
     <h2
       id={id}
-      className="group relative mb-4 mt-8 scroll-mt-24 text-2xl font-bold text-neutral-900 dark:text-white"
+      className="mb-4 mt-8 scroll-mt-24 text-2xl font-bold text-neutral-900 dark:text-white"
     >
-      <button
-        onClick={handleAnchorClick}
-        className="absolute -left-8 top-0 flex h-full items-center opacity-0 transition-opacity group-hover:opacity-100"
-        aria-label="Копирай връзка към секцията"
-      >
-        <Hash className="h-5 w-5 text-neutral-400 transition-colors hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300" />
-      </button>
       {children}
     </h2>
   );
@@ -98,14 +80,19 @@ export default function LegalPage() {
 }
 
 function LegalPageContent() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<SectionId>("tos");
   const { isMobile, setOpenMobile } = useSidebar();
 
+  // Handle hash changes and initial load
   useEffect(() => {
-    const hash = location.hash.slice(1);
-    if (hash) {
+    const updateSectionFromHash = () => {
+      const hash = window.location.hash.slice(1);
+
+      if (!hash) {
+        setActiveSection("tos");
+        return;
+      }
+
       if (hash === "tos") {
         setActiveSection("tos");
       } else if (hash === "pp") {
@@ -127,12 +114,22 @@ function LegalPageContent() {
           }, 100);
         }
       }
-    }
-  }, [location.hash]);
+    };
+
+    // Run on mount
+    updateSectionFromHash();
+
+    // Listen for hash changes
+    window.addEventListener("hashchange", updateSectionFromHash);
+
+    return () => {
+      window.removeEventListener("hashchange", updateSectionFromHash);
+    };
+  }, []);
 
   const handleSectionClick = (sectionId: SectionId) => {
-    setActiveSection(sectionId);
-    navigate(location.pathname, { replace: true });
+    // Update URL hash, which will trigger hashchange event and update state
+    window.location.hash = sectionId;
 
     if (isMobile) {
       setOpenMobile(false);
@@ -140,12 +137,8 @@ function LegalPageContent() {
   };
 
   const handleSubSectionClick = (subsectionId: string) => {
-    navigate(`${location.pathname}#${subsectionId}`, { replace: true });
-
-    const element = document.getElementById(subsectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    // Update URL hash, which will trigger hashchange event and scroll
+    window.location.hash = subsectionId;
 
     if (isMobile) {
       setOpenMobile(false);

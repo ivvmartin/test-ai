@@ -76,25 +76,25 @@ export function useAutoResizeTextarea({
  * Initialize Supabase Auth. Subscribes to auth state changes and updates the auth store
  */
 export const useAuthInitialization = () => {
-  const setUser = useAuthStore((state) => state.setUser);
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
   const setInitialized = useAuthStore((state) => state.setInitialized);
 
   useEffect(() => {
     const supabase = createClient();
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      setAuthenticated(!!session?.user);
       setInitialized(true);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      setAuthenticated(!!session?.user);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [setUser, setInitialized]);
+  }, [setAuthenticated, setInitialized]);
 };

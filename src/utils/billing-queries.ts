@@ -1,75 +1,46 @@
-import type { BillingStatus } from "@/types/billing.types";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseQueryOptions,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import apiClient from "@/lib/axios";
+import { usageKeys } from "./usage-queries";
 
 export const billingKeys = {
   all: ["billing"] as const,
-  status: () => [...billingKeys.all, "status"] as const,
+  plan: () => [...billingKeys.all, "plan"] as const,
 };
 
-async function fetchBillingStatus(): Promise<BillingStatus> {
-  const response = await fetch("/api/billing/status", {
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch billing status");
-  }
-
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error?.message || "Failed to fetch billing status");
-  }
-
-  return data.data;
+interface CheckoutSessionResponse {
+  success: boolean;
+  data: {
+    url: string;
+  };
+  error?: {
+    message: string;
+  };
 }
 
-export function useBillingStatus(
-  options?: Omit<UseQueryOptions<BillingStatus>, "queryKey" | "queryFn">
-) {
-  return useQuery<BillingStatus>({
-    queryKey: billingKeys.status(),
-    queryFn: fetchBillingStatus,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    refetchOnWindowFocus: true,
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) {
-        return false;
-      }
-      return failureCount < 3;
-    },
-    ...options,
-  });
+interface PortalSessionResponse {
+  success: boolean;
+  data: {
+    url: string;
+  };
+  error?: {
+    message: string;
+  };
 }
 
 async function createCheckoutSession(plan: "PREMIUM"): Promise<string> {
-  const response = await fetch("/api/billing/checkout-session", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({ plan }),
-  });
+  const response = await apiClient.post<CheckoutSessionResponse>(
+    "/billing/checkout-session",
+    { plan }
+  );
 
-  if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data.error?.message || "Failed to create checkout session");
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error?.message || "Failed to create checkout session"
+    );
   }
 
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error?.message || "Failed to create checkout session");
-  }
-
-  return data.data.url;
+  return response.data.data.url;
 }
 
 export function useCreateCheckoutSession() {
@@ -83,23 +54,17 @@ export function useCreateCheckoutSession() {
 }
 
 async function createPortalSession(): Promise<string> {
-  const response = await fetch("/api/billing/portal-session", {
-    method: "POST",
-    credentials: "include",
-  });
+  const response = await apiClient.post<PortalSessionResponse>(
+    "/billing/portal-session"
+  );
 
-  if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data.error?.message || "Failed to create portal session");
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error?.message || "Failed to create portal session"
+    );
   }
 
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error?.message || "Failed to create portal session");
-  }
-
-  return data.data.url;
+  return response.data.data.url;
 }
 
 export function useCreatePortalSession() {
@@ -111,9 +76,9 @@ export function useCreatePortalSession() {
       window.location.href = portalUrl;
     },
     onSettled: () => {
-      // Invalidate billing status after returning from portal
+      // Invalidate usage snapshot after returning from portal
       // (User might have updated their subscription)
-      queryClient.invalidateQueries({ queryKey: billingKeys.status() });
+      queryClient.invalidateQueries({ queryKey: usageKeys.snapshot() });
     },
   });
 }
