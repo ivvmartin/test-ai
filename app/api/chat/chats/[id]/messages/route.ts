@@ -345,10 +345,7 @@ export async function POST(
 
           // 9. Consume usage AFTER successful completion
           try {
-            await usageService.consumeUsage(user.userId, 1, {
-              conversationId,
-              model: "gemini-2.5-flash",
-            });
+            await usageService.consumeUsage(user.userId, 1);
           } catch (error) {
             console.error(
               "Failed to consume usage after successful response:",
