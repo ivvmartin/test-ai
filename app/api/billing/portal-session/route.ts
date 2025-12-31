@@ -14,6 +14,7 @@ import {
   CustomerNotFoundError,
 } from "@/lib/billing";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate user

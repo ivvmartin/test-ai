@@ -4,15 +4,33 @@ import { NextResponse, type NextRequest } from "next/server";
 /**
  * Middleware for Supabase Session Refresh
  *
- * Refreshes Supabase session cookies on every request.
- *
- * The middleware:
- * 1. Reads session cookies from the request
- * 2. Refreshes the session if needed
- * 3. Writes updated cookies to the response
- * 4. Allows the request to proceed
+ * 1. Skips auth check for public routes
+ * 2. Only refreshes session when necessary
+ * 3. Minimizes cookie operations
  */
+
+const PUBLIC_ROUTES = ["/auth/sign-in", "/auth/sign-up", "/auth/callback"];
+const API_ROUTES = ["/api/"];
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Skip middleware for public auth routes (no session needed)
+  if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
+    return NextResponse.next();
+  }
+
+  // For API routes, only check session if auth cookie exists
+  if (API_ROUTES.some((route) => pathname.startsWith(route))) {
+    const hasAuthCookie =
+      request.cookies.has("sb-access-token") ||
+      request.cookies.has("sb-refresh-token");
+
+    if (!hasAuthCookie) {
+      return NextResponse.next();
+    }
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -26,7 +44,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
+          cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value);
           });
           supabaseResponse = NextResponse.next({
@@ -41,7 +59,6 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh session if needed
-  // This will automatically update cookies via the setAll callback
   await supabase.auth.getUser();
 
   return supabaseResponse;

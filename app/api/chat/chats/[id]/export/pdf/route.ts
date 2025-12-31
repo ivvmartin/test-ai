@@ -120,7 +120,7 @@ export async function POST(
     const exportData: ConversationExport = {
       metadata: {
         conversationId: conversation.id,
-        title: conversation.title || "Нов разговор",
+        title: conversation.title || "Нов чат",
         exportedAt: new Date().toISOString(),
         locale: "bg-BG",
       },

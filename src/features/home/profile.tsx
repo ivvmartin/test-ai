@@ -35,11 +35,9 @@ export function Profile() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState("");
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const handleLogout = async () => {
-    setIsLoggingOut(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -50,13 +48,12 @@ export function Profile() {
       queryClient.clear();
       toast.success("Излязохте успешно");
       navigate("/auth/sign-in");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Неуспешен изход. Моля, опитайте отново");
       clearAuth();
       queryClient.clear();
       navigate("/auth/sign-in");
-    } finally {
-      setIsLoggingOut(false);
     }
   };
 

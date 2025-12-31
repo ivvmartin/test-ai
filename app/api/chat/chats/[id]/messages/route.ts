@@ -8,6 +8,12 @@ import { requireUser } from "@/lib/auth/requireUser";
 import { createClient } from "@/lib/supabase/server";
 import { LimitExceededError, usageService } from "@/lib/usage";
 import { guardrailService, JailbreakAttemptError } from "@/lib/guardrail";
+import {
+  rateLimiter,
+  RATE_LIMITS,
+  getClientIp,
+  sanitizeUserInput,
+} from "@/lib/security";
 
 /**
  * POST /api/chat/chats/[id]/messages
@@ -40,10 +46,41 @@ export async function POST(
     const supabase = await createClient();
     const { id: conversationId } = await params;
 
-    const body = await request.json();
-    const userMessage = body.content;
+    // Extract IP address securely for rate limiting and logging
+    const clientIp = getClientIp(request);
 
-    if (!userMessage || typeof userMessage !== "string") {
+    const rateLimitResult = rateLimiter.check(
+      `ai-chat:${user.userId}:${clientIp}`,
+      RATE_LIMITS.AI_CHAT.limit,
+      RATE_LIMITS.AI_CHAT.windowMs
+    );
+
+    if (!rateLimitResult.allowed) {
+      const retryAfterSeconds = Math.ceil(
+        (rateLimitResult.resetTime - Date.now()) / 1000
+      );
+      return new Response(
+        JSON.stringify({
+          type: "error",
+          message: "Too many requests. Please try again later.",
+        }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": retryAfterSeconds.toString(),
+            "X-RateLimit-Limit": RATE_LIMITS.AI_CHAT.limit.toString(),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": rateLimitResult.resetTime.toString(),
+          },
+        }
+      );
+    }
+
+    const body = await request.json();
+    const rawMessage = body.content;
+
+    if (!rawMessage || typeof rawMessage !== "string") {
       return new Response(
         JSON.stringify({
           type: "error",
@@ -56,22 +93,34 @@ export async function POST(
       );
     }
 
+    // Sanitize user input to prevent XSS and injection attacks
+    const sanitizationResult = sanitizeUserInput(rawMessage, 10000);
+
+    if (!sanitizationResult.isValid) {
+      console.warn(
+        "🚨 [Security] Invalid input detected:",
+        sanitizationResult.reason
+      );
+      return new Response(
+        JSON.stringify({
+          type: "error",
+          message: "Invalid message content. Please check your input.",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const userMessage = sanitizationResult.sanitized;
+
     // STEP 0: Guardrail Validation
     // Check for jailbreak/malicious attempts BEFORE any processing
     let isGuardrailBlocked = false;
     try {
-      // Extract IP address from request headers
-      let ipAddress =
-        request.headers.get("x-forwarded-for")?.split(",")[0] ||
-        request.headers.get("x-real-ip") ||
-        undefined;
-
-      // Convert IPv6 localhost to IPv4 for cleaner logging
-      if (ipAddress === "::1" || ipAddress === "::ffff:127.0.0.1") {
-        ipAddress = "127.0.0.1";
-      }
-
-      await guardrailService.validateQuery(user.userId, userMessage, ipAddress);
+      // Use the securely extracted IP address
+      await guardrailService.validateQuery(user.userId, userMessage, clientIp);
     } catch (error) {
       if (error instanceof JailbreakAttemptError) {
         console.warn("🚨 [API] Guardrail blocked query for user:", user.userId);

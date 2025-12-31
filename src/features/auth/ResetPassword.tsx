@@ -25,14 +25,13 @@ export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
-  const { register, handleSubmit, watch, formState } =
-    useForm<ResetPasswordFormData>({
-      resolver: zodResolver(resetPasswordSchema),
-      mode: "onChange",
-      defaultValues: {
-        email: "",
-      },
-    });
+  const { register, handleSubmit, formState } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    mode: "onChange",
+    defaultValues: {
+      email: "",
+    },
+  });
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setIsLoading(true);

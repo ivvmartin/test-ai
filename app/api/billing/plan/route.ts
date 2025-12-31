@@ -10,6 +10,7 @@ import { requireUser } from "@/lib/auth/requireUser";
 import { UnauthorizedError } from "@/lib/auth/errors";
 import { usageService } from "@/lib/usage";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(request: NextRequest) {
   try {
     // 1. Authenticate user

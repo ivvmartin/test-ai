@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 
 import apiClient from "@/lib/axios";

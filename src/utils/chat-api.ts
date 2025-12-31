@@ -90,6 +90,18 @@ export async function addMessageWithStreaming(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+
+    // Handle rate limiting (429)
+    if (response.status === 429) {
+      const retryAfter = response.headers.get("Retry-After");
+      const retryMessage = retryAfter
+        ? `Моля, изчакайте ${retryAfter} секунди преди да опитате отново`
+        : "Моля, изчакайте малко преди да опитате отново";
+
+      callbacks.onError(`Твърде много заявки. ${retryMessage}`);
+      return;
+    }
+
     callbacks.onError(
       errorData.message || `HTTP error! status: ${response.status}`
     );

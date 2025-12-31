@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth/requireUser";
+
 import { UnauthorizedError } from "@/lib/auth/errors";
+import { requireUser } from "@/lib/auth/requireUser";
+import { sanitizeText } from "@/lib/security";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -105,7 +107,10 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     const body = await request.json();
-    const title = body.title || null;
+    const rawTitle = body.title || null;
+
+    // Sanitize title if provided
+    const title = rawTitle ? sanitizeText(rawTitle, 200) : null;
 
     const { data, error } = await supabase
       .from("conversations")

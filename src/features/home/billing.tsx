@@ -167,14 +167,6 @@ export function BillingPage() {
                     </Button>
                   )}
                 </div>
-
-                {/* Period Info */}
-                {isPremium && usage.periodEnd && (
-                  <p className="text-xs md:text-sm text-muted-foreground">
-                    Подновява се на{" "}
-                    {new Date(usage.periodEnd).toLocaleDateString()}
-                  </p>
-                )}
               </div>
             </div>
           ) : null}

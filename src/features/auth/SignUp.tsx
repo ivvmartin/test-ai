@@ -61,7 +61,6 @@ export default function SignUp() {
       },
     });
 
-  const email = watch("email");
   const password = watch("password");
   const confirmPassword = watch("confirmPassword");
 

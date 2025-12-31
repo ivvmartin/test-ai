@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import {
   useMutation,
   useQueryClient,
@@ -30,6 +32,7 @@ export function isLimitExceededError(error: unknown): boolean {
   return false;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface CreateConversationMutationOptions
   extends Omit<
     UseMutationOptions<Conversation, Error, CreateConversationRequest>,
@@ -65,6 +68,7 @@ export function useCreateConversationMutation(
     ...(options as any),
   });
 }
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface DeleteConversationMutationOptions
   extends Omit<UseMutationOptions<void, Error, string>, "mutationFn"> {}
 
@@ -420,6 +424,7 @@ export function useStreamingMessage(
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface ExportConversationMutationOptions
   extends Omit<
     UseMutationOptions<{ blob: Blob; filename: string }, Error, string>,

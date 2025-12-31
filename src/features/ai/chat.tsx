@@ -45,7 +45,7 @@ export function ChatPage() {
     },
     onError: (error) => {
       console.error("Failed to create conversation:", error);
-      toast.error("Неуспешно създаване на разговор. Моля, опитайте отново");
+      toast.error("Неуспешно създаване на чат. Моля, опитайте отново");
     },
   });
 
@@ -56,6 +56,10 @@ export function ChatPage() {
     onError: (error) => {
       console.error("Failed to send message:", error);
       setIsGenerating(false);
+
+      if (error.includes("Твърде много заявки")) {
+        toast.error(error);
+      }
     },
   });
 
@@ -112,7 +116,7 @@ export function ChatPage() {
       if (!targetConversationId) {
         try {
           const newConv = await createConversationMutation.mutateAsync({
-            title: "Нов разговор",
+            title: "Нов чат",
           });
           targetConversationId = newConv.id;
 
@@ -121,7 +125,7 @@ export function ChatPage() {
           await new Promise((resolve) => setTimeout(resolve, 100));
         } catch (error) {
           console.error("Failed to create conversation:", error);
-          toast.error("Неуспешно създаване на разговор. Моля, опитайте отново");
+          toast.error("Неуспешно създаване на чат. Моля, опитайте отново");
           setIsGenerating(false);
           return;
         }

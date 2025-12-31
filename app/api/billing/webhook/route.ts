@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * POST /api/billing/webhook
  *
@@ -13,16 +15,10 @@ import { StripeBillingService, WebhookVerificationError } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "stripe-signature, content-type",
-    },
-  });
-}
+/**
+ * Stripe webhooks are server-to-server and don't require CORS.
+ * Webhook authenticity is verified via Stripe signature validation
+ */
 
 export async function POST(request: NextRequest) {
   try {
@@ -126,9 +122,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   if (session.subscription && typeof session.subscription === "string") {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: "2025-12-15.clover",
-    });
+    // Use StripeBillingService to ensure validated env usage
+    const stripeService = new StripeBillingService();
+    const stripe = (stripeService as any).stripe;
 
     const subscription = await stripe.subscriptions.retrieve(
       session.subscription
@@ -196,9 +192,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       .update({ status: "active" })
       .eq("stripe_subscription_id", subscriptionId);
   } else {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: "2025-12-15.clover",
-    });
+    const stripeService = new StripeBillingService();
+    const stripe = (stripeService as any).stripe;
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     const userId = subscription.metadata?.userId;
@@ -243,8 +238,10 @@ async function upsertSubscription(
     currentPeriodEnd = new Date(subscription.trial_end * 1000).toISOString();
   } else {
     // Fallback: try subscription items
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const item = subscription.items.data[0];
     if (item && "current_period_end" in item) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const itemPeriodEnd = (item as any).current_period_end;
       if (itemPeriodEnd) {
         currentPeriodEnd = new Date(itemPeriodEnd * 1000).toISOString();

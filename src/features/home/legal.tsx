@@ -371,8 +371,8 @@ const PrivacyPolicyContent = memo(() => (
       <p className="text-neutral-700 dark:text-neutral-300">
         We may update this Privacy Policy from time to time. We will notify you
         of any changes by posting the new Privacy Policy on this page and
-        updating the "Last updated" date. You are advised to review this Privacy
-        Policy periodically for any changes.
+        updating the &quot;Last updated&quot; date. You are advised to review
+        this Privacy Policy periodically for any changes.
       </p>
     </div>
   </div>

@@ -26,7 +26,7 @@ export class LimitExceededError extends Error {
   /**
    * Create a formatted error message with usage details
    */
-  static createMessage(used: number, limit: number, planKey: string): string {
+  static createMessage(used: number, limit: number): string {
     return `Monthly usage limit of ${limit} messages has been reached (used: ${used}). Upgrade your plan or wait for the next billing period.`;
   }
 }

@@ -1,18 +1,17 @@
 import "server-only";
+
 import { createAdminClient } from "@/lib/supabase/admin";
+import { LimitExceededError, UsageError } from "./errors";
 import {
+  ConsumeUsageResult,
+  EntitlementResult,
+  getPeriodInfo,
   PlanKey,
   PLANS,
-  EntitlementResult,
-  UsageSnapshotResult,
-  ConsumeUsageResult,
-  ConsumeUsageMeta,
-  getPeriodInfo,
-  Subscription,
   UsageCounter,
+  UsageSnapshotResult,
   UserMetadata,
 } from "./types";
-import { LimitExceededError, UsageError } from "./errors";
 
 export class UsageService {
   private supabase = createAdminClient();
@@ -105,7 +104,7 @@ export class UsageService {
     const userCreatedAt = new Date(user.user.created_at);
     const period = getPeriodInfo(userCreatedAt, dateNow);
 
-    const { data: counter, error } = await this.supabase
+    const { data: counter } = await this.supabase
       .from("usage_counters")
       .select("*")
       .eq("user_id", userId)
@@ -146,8 +145,7 @@ export class UsageService {
    */
   async consumeUsage(
     userId: string,
-    amount: number = 1,
-    meta?: ConsumeUsageMeta
+    amount: number = 1
   ): Promise<ConsumeUsageResult> {
     const entitlement = await this.resolveEntitlement(userId);
 
@@ -183,11 +181,7 @@ export class UsageService {
       // Get current usage to provide accurate error message
       const snapshot = await this.getUsageSnapshot(userId);
       throw new LimitExceededError(
-        LimitExceededError.createMessage(
-          snapshot.used,
-          snapshot.monthlyLimit,
-          snapshot.planKey
-        ),
+        LimitExceededError.createMessage(snapshot.used, snapshot.monthlyLimit),
         snapshot.used,
         snapshot.monthlyLimit,
         snapshot.planKey
@@ -219,11 +213,7 @@ export class UsageService {
 
     if (snapshot.used >= snapshot.monthlyLimit) {
       throw new LimitExceededError(
-        LimitExceededError.createMessage(
-          snapshot.used,
-          snapshot.monthlyLimit,
-          snapshot.planKey
-        ),
+        LimitExceededError.createMessage(snapshot.used, snapshot.monthlyLimit),
         snapshot.used,
         snapshot.monthlyLimit,
         snapshot.planKey

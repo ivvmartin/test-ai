@@ -1,4 +1,8 @@
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
+import {
+  QueryClient,
+  useQuery,
+  type UseQueryOptions,
+} from "@tanstack/react-query";
 
 import { useAuthStore } from "@/store/auth.store";
 import type { Conversation, Message } from "@/types/chat.types";
@@ -18,7 +22,7 @@ export function useConversationsQuery(
     queryFn: getConversations,
     enabled: isAuthenticated && (options?.enabled ?? true),
     staleTime: 1000 * 60 * 2, // 2 minutes
-    refetchOnMount: "always",
+    refetchOnMount: false,
     ...options,
   });
 }
@@ -50,7 +54,7 @@ export function useMessagesQuery(
 /**
  * Prefetches conversations to improve perceived performance
  */
-export function prefetchConversations(queryClient: any) {
+export function prefetchConversations(queryClient: QueryClient) {
   return queryClient.prefetchQuery({
     queryKey: chatQueryKeys.conversations(),
     queryFn: getConversations,
