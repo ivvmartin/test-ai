@@ -10,6 +10,7 @@ import { useSidebar } from "@components/ui/sidebar";
 import { Skeleton } from "@components/ui/skeleton";
 import {
   useCreateConversationMutation,
+  useDeleteConversationMutation,
   useStreamingMessage,
 } from "@utils/chat-mutations";
 import { useMessagesQuery } from "@utils/chat-queries";
@@ -48,6 +49,7 @@ export function ChatPage() {
       toast.error("Неуспешно създаване на чат. Моля, опитайте отново");
     },
   });
+  const deleteConversationMutation = useDeleteConversationMutation();
 
   const { sendMessage, isStreaming } = useStreamingMessage(conversationId, {
     onComplete: () => {
@@ -112,6 +114,7 @@ export function ChatPage() {
       setIsGenerating(true);
 
       let targetConversationId = conversationId;
+      let isNewConversation = false;
 
       if (!targetConversationId) {
         try {
@@ -119,6 +122,7 @@ export function ChatPage() {
             title: "Нов чат",
           });
           targetConversationId = newConv.id;
+          isNewConversation = true;
 
           navigate(`/app/chat/${targetConversationId}`);
 
@@ -131,7 +135,29 @@ export function ChatPage() {
         }
       }
 
-      await sendMessage(userMessageContent, targetConversationId);
+      // Send the message
+      try {
+        await sendMessage(userMessageContent, targetConversationId);
+      } catch (error) {
+        // If this was a newly created conversation and the first message failed,
+        // delete the conversation to avoid orphaned empty conversations
+        if (isNewConversation && targetConversationId) {
+          console.log(
+            "🗑️ Deleting orphaned conversation:",
+            targetConversationId
+          );
+          try {
+            await deleteConversationMutation.mutateAsync(targetConversationId);
+            navigate("/app/chat");
+          } catch (deleteError) {
+            console.error(
+              "Failed to delete orphaned conversation:",
+              deleteError
+            );
+          }
+        }
+        // Error is already handled by sendMessage's onError callback
+      }
     },
     [
       input,
@@ -139,6 +165,7 @@ export function ChatPage() {
       isStreaming,
       conversationId,
       createConversationMutation,
+      deleteConversationMutation,
       navigate,
       sendMessage,
       isAtLimit,

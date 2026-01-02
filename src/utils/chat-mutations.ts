@@ -355,6 +355,9 @@ export function useStreamingMessage(
             );
 
             options?.onError?.(error);
+
+            // Throw error so it can be caught by the caller
+            throw new Error(error);
           },
         });
       } catch (error) {
@@ -411,6 +414,9 @@ export function useStreamingMessage(
         );
 
         options?.onError?.(errorMessage);
+
+        // Re-throw error so it can be caught by the caller
+        throw error;
       }
     },
     [conversationId, queryClient, options]
