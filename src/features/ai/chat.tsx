@@ -1,11 +1,14 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useNavigate, useParams } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import type { Message } from "@/types/chat.types";
+import { chatQueryKeys } from "@/types/chat.types";
 import { useSidebar } from "@components/ui/sidebar";
 import { Skeleton } from "@components/ui/skeleton";
 import {
@@ -20,8 +23,10 @@ import { AiInput, ChatNotFound, ChatWelcome, MessageItem } from "./components";
 export function ChatPage() {
   const { conversationId } = useParams<{ conversationId?: string }>();
   const navigate = useNavigate();
-  const { data: userIdentity } = useUserIdentity();
+  const queryClient = useQueryClient();
+
   const { state: sidebarState, isMobile } = useSidebar();
+  const { data: userIdentity } = useUserIdentity();
 
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -108,14 +113,45 @@ export function ChatPage() {
         return;
 
       const userMessageContent = input.trim();
-      setInput("");
-
-      // Set loading state immediately for instant feedback
-      setIsGenerating(true);
 
       let targetConversationId = conversationId;
       let isNewConversation = false;
 
+      // Clear input and set loading state IMMEDIATELY for instant feedback
+      setInput("");
+      setIsGenerating(true);
+
+      // For existing conversations, add optimistic messages IMMEDIATELY
+      if (targetConversationId) {
+        const userMessage: Message = {
+          id: `temp-user-${Date.now()}`,
+          conversationId: targetConversationId,
+          userId: "current-user",
+          role: "user",
+          content: userMessageContent,
+          createdAt: new Date().toISOString(),
+        };
+
+        const assistantMessage: Message = {
+          id: `temp-assistant-${Date.now()}`,
+          conversationId: targetConversationId,
+          userId: "assistant",
+          role: "assistant",
+          content: "...",
+          createdAt: new Date().toISOString(),
+        };
+
+        // Update cache synchronously for instant UI update
+        queryClient.setQueryData<Message[]>(
+          chatQueryKeys.messages(targetConversationId),
+          (old) =>
+            old
+              ? [...old, userMessage, assistantMessage]
+              : [userMessage, assistantMessage]
+        );
+      }
+
+      // Handle new conversation creation
       if (!targetConversationId) {
         try {
           const newConv = await createConversationMutation.mutateAsync({
@@ -125,8 +161,6 @@ export function ChatPage() {
           isNewConversation = true;
 
           navigate(`/app/chat/${targetConversationId}`);
-
-          await new Promise((resolve) => setTimeout(resolve, 100));
         } catch (error) {
           console.error("Failed to create conversation:", error);
           toast.error("Неуспешно създаване на чат. Моля, опитайте отново");
@@ -135,10 +169,8 @@ export function ChatPage() {
         }
       }
 
-      // Send the message
-      try {
-        await sendMessage(userMessageContent, targetConversationId);
-      } catch (error) {
+      // Send the message (non-blocking, optimistic updates already done for existing conversations)
+      sendMessage(userMessageContent, targetConversationId).catch(() => {
         // If this was a newly created conversation and the first message failed,
         // delete the conversation to avoid orphaned empty conversations
         if (isNewConversation && targetConversationId) {
@@ -146,18 +178,18 @@ export function ChatPage() {
             "🗑️ Deleting orphaned conversation:",
             targetConversationId
           );
-          try {
-            await deleteConversationMutation.mutateAsync(targetConversationId);
-            navigate("/app/chat");
-          } catch (deleteError) {
-            console.error(
-              "Failed to delete orphaned conversation:",
-              deleteError
-            );
-          }
+          deleteConversationMutation
+            .mutateAsync(targetConversationId)
+            .then(() => navigate("/app/chat"))
+            .catch((deleteError) => {
+              console.error(
+                "Failed to delete orphaned conversation:",
+                deleteError
+              );
+            });
         }
         // Error is already handled by sendMessage's onError callback
-      }
+      });
     },
     [
       input,
@@ -171,6 +203,7 @@ export function ChatPage() {
       isAtLimit,
       isLoadingMessages,
       hasLoadingMessage,
+      queryClient,
     ]
   );
 
@@ -261,9 +294,12 @@ export function ChatPage() {
               </div>
             </div>
           ) : messages.length > 0 ? (
-            <AnimatePresence mode="popLayout">
-              {messages.map((message) => (
-                <div key={message.id} className="mb-6 last:mb-0">
+            <AnimatePresence initial={false}>
+              {messages.map((message, index) => (
+                <div
+                  key={`${index}-${message.role}`}
+                  className="mb-6 last:mb-0"
+                >
                   <MessageItem
                     message={message}
                     userEmail={userIdentity?.email}

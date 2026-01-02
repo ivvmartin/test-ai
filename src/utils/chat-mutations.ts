@@ -88,14 +88,17 @@ export function useDeleteConversationMutation(
   >({
     mutationFn: deleteConversation,
     onMutate: async (conversationId) => {
+      // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         queryKey: chatQueryKeys.conversations(),
       });
 
+      // Snapshot the previous value for rollback
       const previousConversations = queryClient.getQueryData<Conversation[]>(
         chatQueryKeys.conversations()
       );
 
+      // Optimistically remove the conversation from the list immediately
       queryClient.setQueryData<Conversation[]>(
         chatQueryKeys.conversations(),
         (oldConversations) => {
@@ -106,7 +109,8 @@ export function useDeleteConversationMutation(
 
       return { previousConversations };
     },
-    onError: (err, conversationId, context) => {
+    onError: (_err, _conversationId, context) => {
+      // Rollback to previous state if deletion fails
       if (context?.previousConversations) {
         queryClient.setQueryData<Conversation[]>(
           chatQueryKeys.conversations(),
@@ -114,13 +118,10 @@ export function useDeleteConversationMutation(
         );
       }
     },
-    onSuccess: (data, conversationId) => {
+    onSuccess: (_data, conversationId) => {
+      // Remove messages cache for this conversation
       queryClient.removeQueries({
         queryKey: chatQueryKeys.messages(conversationId),
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: chatQueryKeys.conversations(),
       });
     },
     ...(options as any),
@@ -162,71 +163,47 @@ export function useStreamingMessage(
         return;
       }
 
-      await queryClient.cancelQueries({
-        queryKey: chatQueryKeys.messages(targetConversationId),
-      });
-
-      // Reset state
+      // Reset state and set streaming immediately
       setState({
         isStreaming: true,
         streamedText: "",
         error: null,
       });
 
-      const userMessage: Message = {
-        id: `temp-user-${Date.now()}`,
-        conversationId: targetConversationId,
-        userId: "current-user",
-        role: "user",
-        content,
-        createdAt: new Date().toISOString(),
-      };
+      // For new conversations, add optimistic messages here
+      // (existing conversations already have them added in handleSubmit)
+      if (overrideConversationId && overrideConversationId !== conversationId) {
+        const userMessage: Message = {
+          id: `temp-user-${Date.now()}`,
+          conversationId: targetConversationId,
+          userId: "current-user",
+          role: "user",
+          content,
+          createdAt: new Date().toISOString(),
+        };
 
-      console.log("🟢 [Optimistic] Adding user message:", userMessage);
+        const assistantMessageId = `temp-assistant-${Date.now()}`;
+        const assistantMessage: Message = {
+          id: assistantMessageId,
+          conversationId: targetConversationId,
+          userId: "assistant",
+          role: "assistant",
+          content: "...",
+          createdAt: new Date().toISOString(),
+        };
 
-      queryClient.setQueryData<Message[]>(
-        chatQueryKeys.messages(targetConversationId),
-        (old) => {
-          console.log("🟢 [Optimistic] User message - old cache:", old);
-          const updated = old ? [...old, userMessage] : [userMessage];
-          console.log("🟢 [Optimistic] User message - updated cache:", updated);
-          return updated;
-        }
-      );
+        queryClient.setQueryData<Message[]>(
+          chatQueryKeys.messages(targetConversationId),
+          (old) => {
+            const updated = old
+              ? [...old, userMessage, assistantMessage]
+              : [userMessage, assistantMessage];
+            return updated;
+          }
+        );
+      }
 
       const assistantMessageId = `temp-assistant-${Date.now()}`;
-      const assistantMessage: Message = {
-        id: assistantMessageId,
-        conversationId: targetConversationId,
-        userId: "assistant",
-        role: "assistant",
-        content: "...", // Loading
-        createdAt: new Date().toISOString(),
-      };
-
-      console.log(
-        "🟢 [Optimistic] Adding assistant message:",
-        assistantMessage
-      );
-
-      queryClient.setQueryData<Message[]>(
-        chatQueryKeys.messages(targetConversationId),
-        (old) => {
-          console.log("🟢 [Optimistic] Assistant message - old cache:", old);
-          const updated = old ? [...old, assistantMessage] : [assistantMessage];
-          console.log(
-            "🟢 [Optimistic] Assistant message - updated cache:",
-            updated
-          );
-          return updated;
-        }
-      );
-
-      console.log("🟢 [Optimistic] Verifying cache after both updates...");
-      const afterBoth = queryClient.getQueryData<Message[]>(
-        chatQueryKeys.messages(targetConversationId)
-      );
-      console.log("🟢 [Optimistic] Cache after both updates:", afterBoth);
 
       try {
         await addMessageWithStreaming(targetConversationId, content, {
@@ -276,28 +253,32 @@ export function useStreamingMessage(
           onDone: async (usage) => {
             console.log("🟢 [onDone] Called with usage:", usage);
 
-            await queryClient.cancelQueries({
-              queryKey: chatQueryKeys.messages(targetConversationId),
-            });
-
             setState((prev) => ({
               ...prev,
               isStreaming: false,
             }));
 
-            console.log("🟢 [onDone] About to invalidate messages query...");
+            console.log(
+              "🟢 [onDone] About to refetch queries in background..."
+            );
 
-            queryClient.invalidateQueries({
-              queryKey: chatQueryKeys.messages(targetConversationId),
-            });
-            queryClient.invalidateQueries({
-              queryKey: chatQueryKeys.conversations(),
-            });
-            queryClient.invalidateQueries({
-              queryKey: usageKeys.snapshot(),
-            });
+            // Refetch in background without showing loading states
+            await Promise.all([
+              queryClient.refetchQueries({
+                queryKey: chatQueryKeys.messages(targetConversationId),
+                type: "active",
+              }),
+              queryClient.refetchQueries({
+                queryKey: chatQueryKeys.conversations(),
+                type: "active",
+              }),
+              queryClient.refetchQueries({
+                queryKey: usageKeys.snapshot(),
+                type: "active",
+              }),
+            ]);
 
-            console.log("🟢 [onDone] Invalidation complete");
+            console.log("🟢 [onDone] Background refetch complete");
 
             options?.onComplete?.();
           },

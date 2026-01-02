@@ -21,7 +21,7 @@ export const MessageItem = memo(
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.05 }}
           className="flex flex-row gap-3 px-1 py-2 sm:gap-4 sm:px-2"
         >
           <div className="bg-muted flex size-8 shrink-0 items-center justify-center rounded-full">
@@ -46,7 +46,7 @@ export const MessageItem = memo(
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.05 }}
         className="bg-muted/30 group relative flex gap-3 rounded-xl px-3 py-4 sm:gap-4 sm:px-4 sm:py-5"
       >
         <Bot className="bg-primary/10 text-primary flex size-8 shrink-0 rounded-full p-1.5" />
@@ -83,12 +83,14 @@ export const MessageItem = memo(
     );
   },
   (prevProps, nextProps) => {
+    // Only re-render if content or role changes
+    // Don't compare ID to prevent flash when temp ID changes to real ID
     return (
-      prevProps.message.id === nextProps.message.id &&
-      prevProps.message.content === nextProps.message.content
+      prevProps.message.role === nextProps.message.role &&
+      prevProps.message.content === nextProps.message.content &&
+      prevProps.userEmail === nextProps.userEmail
     );
   }
 );
 
 MessageItem.displayName = "MessageItem";
-
