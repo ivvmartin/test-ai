@@ -19,7 +19,6 @@ import { useAuthStore } from "@store/auth.store";
 import { useConversationsQuery } from "@utils/chat-queries";
 import { queryClient } from "@utils/queries";
 import { useUsageSnapshot, useUserIdentity } from "@utils/usage-queries";
-
 import { UserMenu } from "./components/UserMenu";
 import { useScrollDetection } from "./hooks/useScrollDetection";
 
@@ -28,8 +27,9 @@ export function TopBar() {
   const navigate = useNavigate();
   const supabase = createClient();
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  const { data: userIdentity } = useUserIdentity();
-  const { data: usage } = useUsageSnapshot();
+  const { data: userIdentity, isLoading: isLoadingUserIdentity } =
+    useUserIdentity();
+  const { data: usage, isLoading: isLoadingUsage } = useUsageSnapshot();
   const { data: conversations = [] } = useConversationsQuery();
   const { open, isMobile } = useSidebar();
 
@@ -131,6 +131,7 @@ export function TopBar() {
             onNavigateBilling={() => navigate("/app/billing")}
             onLogout={handleLogout}
             isScrolled={isScrolled}
+            isLoading={isLoadingUserIdentity || isLoadingUsage}
           />
         </div>
       </header>

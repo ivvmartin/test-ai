@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu";
+import { Skeleton } from "@components/ui/skeleton";
 
 interface UserMenuProps {
   userEmail: string | undefined;
@@ -19,6 +20,7 @@ interface UserMenuProps {
   onNavigateBilling: () => void;
   onLogout: () => void;
   isScrolled?: boolean;
+  isLoading?: boolean;
 }
 
 export function UserMenu({
@@ -30,7 +32,32 @@ export function UserMenu({
   onNavigateBilling,
   onLogout,
   isScrolled = false,
+  isLoading = false,
 }: UserMenuProps) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-1 md:gap-2.5 rounded-lg px-1 md:px-2.5 py-1 md:py-1.5">
+        <Skeleton
+          className={`rounded-2xl flex-shrink-0 transition-all duration-500 ${
+            isScrolled ? "size-6" : "size-7"
+          }`}
+        />
+        <div className="flex flex-col items-start gap-1">
+          <Skeleton
+            className={`transition-all duration-500 ${
+              isScrolled ? "h-3 w-24" : "h-3.5 w-28"
+            }`}
+          />
+          <Skeleton
+            className={`transition-all duration-500 ${
+              isScrolled ? "h-2.5 w-16" : "h-3 w-20"
+            }`}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
