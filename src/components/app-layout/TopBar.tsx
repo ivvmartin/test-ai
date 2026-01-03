@@ -49,7 +49,7 @@ export function TopBar() {
       if (currentConversation?.title) {
         return currentConversation.title;
       }
-      return "Чат";
+      return "Начало";
     }
     if (location.pathname.startsWith("/app/profile")) {
       return "Профил";
