@@ -266,7 +266,7 @@ export function ChatPage() {
   }
 
   return (
-    <div className="relative h-full w-full">
+    <div className={`relative h-full w-full ${isMobile ? "" : "pl-6"}`}>
       {/* Messages area */}
       <div className="h-full overflow-y-auto pb-32">
         <div className="mx-auto w-full max-w-4xl p-4 md:p-6">
@@ -321,7 +321,7 @@ export function ChatPage() {
             "md:left-[var(--sidebar-width)]"
         )}
       >
-        <div className="mx-auto w-full max-w-2xl">
+        <div className={`mx-auto w-full max-w-2xl ${isMobile ? "" : "pl-6"}`}>
           <form onSubmit={handleSubmit} className="pointer-events-auto">
             <AiInput
               value={input}

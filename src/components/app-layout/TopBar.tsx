@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from "@components/ui/tooltip";
 import { useAuthStore } from "@store/auth.store";
+import { useConversationsQuery } from "@utils/chat-queries";
 import { queryClient } from "@utils/queries";
 import { useUsageSnapshot, useUserIdentity } from "@utils/usage-queries";
 
@@ -29,13 +30,25 @@ export function TopBar() {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const { data: userIdentity } = useUserIdentity();
   const { data: usage } = useUsageSnapshot();
+  const { data: conversations = [] } = useConversationsQuery();
   const { open, isMobile } = useSidebar();
 
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const isScrolled = useScrollDetection(20);
 
+  const conversationId = location.pathname.startsWith("/app/chat/")
+    ? location.pathname.split("/app/chat/")[1]
+    : null;
+
+  const currentConversation = conversationId
+    ? conversations.find((c) => c.id === conversationId)
+    : null;
+
   const getPageTitle = () => {
     if (location.pathname.startsWith("/app/chat")) {
+      if (currentConversation?.title) {
+        return currentConversation.title;
+      }
       return "Чат";
     }
     if (location.pathname.startsWith("/app/profile")) {
@@ -83,7 +96,7 @@ export function TopBar() {
         className={cn(
           "bg-background mx-auto flex items-center justify-between border-b px-2 md:px-6 overflow-x-auto transition-all duration-500 ease-in-out will-change-[background-color,max-width,border-radius,box-shadow,margin-top] h-14",
           isScrolled &&
-            "bg-background/30 max-w-8xl rounded-xl border backdrop-blur-sm shadow-md mt-2"
+            "bg-background/70 max-w-10xl rounded-xl border backdrop-blur-sm shadow-md mt-1"
         )}
       >
         <div className="flex items-center gap-1.5 md:gap-2 min-w-0">
@@ -102,7 +115,7 @@ export function TopBar() {
             key={location.pathname}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-semibold whitespace-nowrap text-base md:text-lg"
+            className="text-sm font-medium truncate"
           >
             {getPageTitle()}
           </motion.h1>

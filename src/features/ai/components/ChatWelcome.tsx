@@ -30,7 +30,7 @@ export function ChatWelcome({
   return (
     <div
       className={`flex h-[calc(70vh-2.5rem)] w-full items-center justify-center p-4 ${
-        isMobile ? "" : "pl-14"
+        isMobile ? "" : "pl-18"
       }`}
     >
       <div className="flex w-full max-w-xl flex-col items-center justify-center space-y-10">
@@ -60,4 +60,3 @@ export function ChatWelcome({
     </div>
   );
 }
-
