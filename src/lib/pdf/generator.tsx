@@ -444,9 +444,7 @@ const styles = StyleSheet.create({
   strong: {
     fontWeight: "bold",
   },
-  em: {
-    fontStyle: "italic",
-  },
+  em: {},
   inlineCode: {
     fontSize: 9,
   },
