@@ -25,10 +25,21 @@ import type { ConversationExport } from "./types";
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 
+// Page padding
 const MARGIN_LEFT = 45;
 const MARGIN_RIGHT = 45;
 const MARGIN_TOP = 60;
-const MARGIN_BOTTOM = 65;
+
+// Footer sizing
+const FOOTER_BOTTOM_OFFSET = 22; // visual offset from bottom edge
+const FOOTER_DIVIDER_HEIGHT = 1;
+const FOOTER_GAP_BELOW_DIVIDER = 6;
+const FOOTER_TEXT_FONT_SIZE = 8;
+const FOOTER_LINE_HEIGHT = 1.2;
+const FOOTER_RESERVED_HEIGHT = 34;
+
+// Bottom padding includes reserved footer + a small safety buffer
+const MARGIN_BOTTOM = FOOTER_BOTTOM_OFFSET + FOOTER_RESERVED_HEIGHT + 10;
 
 type MdastNode = {
   type: string;
@@ -52,24 +63,23 @@ type Block =
   | { type: "h1"; inlines: InlineRun[] }
   | { type: "h2"; inlines: InlineRun[] }
   | { type: "h3"; inlines: InlineRun[] }
-  | { type: "p"; inlines: InlineRun[]; kind?: "sectionTitle" | "normal" }
+  | { type: "p"; inlines: InlineRun[] }
   | {
       type: "li";
       ordered: boolean;
-      index: number; // 1-based for ordered lists
-      indent: number; // Nesting depth
+      index: number;
+      indent: number;
       inlines: InlineRun[];
     }
   | { type: "hr" };
 
-/* =============================== MAIN ENTRY =============================== */
+/* =============================== FONTS =============================== */
 
-export async function generatePDF(
-  exportData: ConversationExport
-): Promise<Buffer> {
-  validateExportData(exportData);
+let interFontsRegistered = false;
 
-  // Fonts (embedded = deterministic Cyrillic rendering)
+function ensureFontsRegistered(): void {
+  if (interFontsRegistered) return;
+
   const interRegularPath = path.join(
     process.cwd(),
     "public",
@@ -91,6 +101,17 @@ export async function generatePDF(
     ],
   });
 
+  interFontsRegistered = true;
+}
+
+/* =============================== MAIN ENTRY =============================== */
+
+export async function generatePDF(
+  exportData: ConversationExport
+): Promise<Buffer> {
+  validateExportData(exportData);
+  ensureFontsRegistered();
+
   const logoDataUrl = await loadLogoDataUrl(
     path.join(process.cwd(), "public", "brand.png")
   );
@@ -110,7 +131,6 @@ export async function generatePDF(
     />
   );
 
-  // Generate PDF and convert to buffer
   const pdfInstance = pdf(doc);
   const blob = await pdfInstance.toBlob();
   const arrayBuffer = await blob.arrayBuffer();
@@ -158,8 +178,13 @@ function Header(props: { title: string; logoDataUrl: string | null }) {
 
   return (
     <View style={styles.header}>
-      {/* eslint-disable-next-line jsx-a11y/alt-text */}
-      <Image src={logoDataUrl ?? ""} style={styles.logo} />
+      {/* Render logo only if it exists */}
+      {logoDataUrl ? (
+        // eslint-disable-next-line jsx-a11y/alt-text
+        <Image src={logoDataUrl} style={styles.logo} />
+      ) : (
+        <View style={styles.logoPlaceholder} />
+      )}
 
       <View style={styles.headerText}>
         <Text style={styles.brand}>ЕВТА КОНСУЛТ | ДАНЪЧЕН AI</Text>
@@ -192,7 +217,6 @@ function Message(props: { role: string; blocks: Block[] }) {
     <View style={styles.message} wrap>
       <Text style={styles.role}>{roleLabel}</Text>
       <View style={styles.roleDivider} />
-
       <View style={styles.messageBody}>
         {props.blocks.map((b, i) => (
           <BlockRenderer key={i} block={b} />
@@ -227,17 +251,12 @@ function BlockRenderer(props: { block: Block }) {
         </Text>
       );
 
-    case "p": {
-      const isSectionTitle = block.kind === "sectionTitle";
-      const textStyle = isSectionTitle
-        ? [styles.p, styles.sectionTitleP]
-        : styles.p;
+    case "p":
       return (
-        <Text style={textStyle} wrap>
+        <Text style={styles.p} wrap>
           <InlineRuns runs={block.inlines} />
         </Text>
       );
-    }
 
     case "li": {
       const marker = block.ordered ? `${block.index}.` : "•";
@@ -269,40 +288,45 @@ function InlineRuns(props: { runs: InlineRun[] }) {
   return (
     <>
       {runs.map((r, i) => {
-        if (r.type === "text") return <Text key={i}>{r.value}</Text>;
+        switch (r.type) {
+          case "text":
+            return <Text key={i}>{r.value}</Text>;
 
-        if (r.type === "hardBreak") return <Text key={i}>{"\n"}</Text>;
+          case "hardBreak":
+            // Newline within text flow
+            return <Text key={i}>{"\n"}</Text>;
 
-        if (r.type === "strong")
-          return (
-            <Text key={i} style={styles.strong}>
-              <InlineRuns runs={r.children} />
-            </Text>
-          );
+          case "strong":
+            return (
+              <Text key={i} style={styles.strong}>
+                <InlineRuns runs={r.children} />
+              </Text>
+            );
 
-        if (r.type === "em")
-          return (
-            <Text key={i} style={styles.em}>
-              <InlineRuns runs={r.children} />
-            </Text>
-          );
+          case "em":
+            return (
+              <Text key={i} style={styles.em}>
+                <InlineRuns runs={r.children} />
+              </Text>
+            );
 
-        if (r.type === "inlineCode") {
-          return (
-            <Text key={i} style={styles.inlineCode}>
-              {r.value}
-            </Text>
-          );
+          case "inlineCode":
+            return (
+              <Text key={i} style={styles.inlineCode}>
+                {r.value}
+              </Text>
+            );
+
+          case "link":
+            return (
+              <Text key={i} style={styles.link}>
+                <InlineRuns runs={r.children} />
+              </Text>
+            );
+
+          default:
+            return null;
         }
-
-        if (r.type === "link")
-          return (
-            <Text key={i} style={styles.link}>
-              <InlineRuns runs={r.children} />
-            </Text>
-          );
-
-        return null;
       })}
     </>
   );
@@ -319,6 +343,7 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
     lineHeight: 1.45,
   },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -328,6 +353,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "#333",
   },
   logo: {
+    width: 48,
+    height: 48,
+    marginRight: 16,
+  },
+  logoPlaceholder: {
     width: 48,
     height: 48,
     marginRight: 16,
@@ -342,12 +372,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: 600,
+    fontWeight: "bold",
     lineHeight: 1.3,
   },
-  messages: {
-    paddingBottom: 50,
-  },
+
+  messages: {},
+
   message: {
     marginBottom: 14,
   },
@@ -362,6 +392,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   messageBody: {},
+
   h1: {
     fontSize: 14,
     fontWeight: "bold",
@@ -383,14 +414,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     lineHeight: 1.25,
   },
+
   p: {
     marginTop: 3,
     marginBottom: 6,
   },
-  sectionTitleP: {
-    marginTop: 12,
-    marginBottom: 6,
-  },
+
   liRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -399,41 +428,47 @@ const styles = StyleSheet.create({
   },
   liMarker: {
     width: 16,
-    fontWeight: "bold",
+    fontWeight: "normal",
   },
   liText: {
     flexGrow: 1,
   },
+
   hr: {
     height: 1,
     backgroundColor: "#e5e5e5",
     marginTop: 10,
     marginBottom: 10,
   },
+
   strong: {
     fontWeight: "bold",
   },
-  em: {},
+  em: {
+    fontStyle: "italic",
+  },
   inlineCode: {
     fontSize: 9,
   },
   link: {
     textDecoration: "underline",
   },
+
   footer: {
     position: "absolute",
     left: MARGIN_LEFT,
     right: MARGIN_RIGHT,
-    bottom: 22,
+    bottom: FOOTER_BOTTOM_OFFSET,
     textAlign: "center",
   },
   footerDivider: {
-    height: 1,
+    height: FOOTER_DIVIDER_HEIGHT,
     backgroundColor: "#e5e5e5",
-    marginBottom: 6,
+    marginBottom: FOOTER_GAP_BELOW_DIVIDER,
   },
   footerText: {
-    fontSize: 8,
+    fontSize: FOOTER_TEXT_FONT_SIZE,
+    lineHeight: FOOTER_LINE_HEIGHT,
     color: "#666666",
   },
 });
@@ -443,7 +478,11 @@ const styles = StyleSheet.create({
 async function parseMarkdownToBlocks(markdown: string): Promise<Block[]> {
   const tree = remark().use(remarkGfm).parse(markdown) as MdastNode;
   const out: Block[] = [];
-  for (const node of tree.children ?? []) walkBlocks(node, out, 0);
+
+  for (const node of tree.children ?? []) {
+    walkBlocks(node, out, 0);
+  }
+
   return out.filter((b) => !isEmptyBlock(b));
 }
 
@@ -464,13 +503,7 @@ function walkBlocks(node: MdastNode, out: Block[], indent: number): void {
       const inlines = toInlineRuns(node);
       if (!hasInlineText(inlines)) return;
 
-      const plain = inlineRunsToPlainText(inlines).trim();
-      const kind =
-        isNumberedSection(plain) || isSectionLabel(plain)
-          ? "sectionTitle"
-          : "normal";
-
-      out.push({ type: "p", inlines, kind });
+      out.push({ type: "p", inlines });
       return;
     }
 
@@ -510,7 +543,7 @@ function walkBlocks(node: MdastNode, out: Block[], indent: number): void {
     case "blockquote": {
       const inlines = toInlineRuns(node);
       if (!hasInlineText(inlines)) return;
-      out.push({ type: "p", inlines, kind: "normal" });
+      out.push({ type: "p", inlines });
       return;
     }
 
@@ -577,6 +610,8 @@ function toInlineRuns(node: MdastNode): InlineRun[] {
 function toInlineRunsListItemContent(listItem: MdastNode): InlineRun[] {
   const runs: InlineRun[] = [];
 
+  // Only paragraphs count as the textual content of the list item.
+  // Nested lists are handled separately in walkBlocks to avoid duplication
   for (const child of listItem.children ?? []) {
     if (child.type === "paragraph") {
       runs.push(...toInlineRuns(child));
@@ -669,25 +704,14 @@ function isEmptyBlock(b: Block): boolean {
   if (b.type === "hr") return false;
   if (b.type === "li")
     return inlineRunsToPlainText(b.inlines).trim().length === 0;
+
   return (
     inlineRunsToPlainText((b as { inlines?: InlineRun[] }).inlines ?? []).trim()
       .length === 0
   );
 }
 
-/* ================================== MICS ================================== */
-
-function isNumberedSection(text: string): boolean {
-  // e.g. "4. ..." / "10. ..."
-  return /^\d+\.\s+/.test(text.trim());
-}
-
-function isSectionLabel(text: string): boolean {
-  // e.g. "Заключение", "Обобщение", etc.
-  return /^(заключение|извод|обобщение|резюме|препоръки?|препоръка)$/i.test(
-    text.trim()
-  );
-}
+/* ================================== MISC ================================== */
 
 async function loadLogoDataUrl(filePath: string): Promise<string | null> {
   try {
