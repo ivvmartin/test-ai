@@ -16,30 +16,6 @@ export interface MessageExport {
   createdAt: string; // ISO 8601 string
 }
 
-export interface PDFGenerationOptions {
-  format?: "A4" | "Letter";
-  margin?: {
-    top: string;
-    right: string;
-    bottom: string;
-    left: string;
-  };
-  displayHeaderFooter?: boolean;
-  printBackground?: boolean;
-}
-
-export const DEFAULT_PDF_OPTIONS: PDFGenerationOptions = {
-  format: "A4",
-  margin: {
-    top: "15mm",
-    right: "12mm",
-    bottom: "15mm",
-    left: "12mm",
-  },
-  displayHeaderFooter: false,
-  printBackground: true,
-};
-
 /**
  * Export size limits to prevent abuse and ensure performance
  */

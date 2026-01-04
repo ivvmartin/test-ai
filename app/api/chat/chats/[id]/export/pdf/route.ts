@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireUser } from "@/lib/auth/requireUser";
 import { UnauthorizedError } from "@/lib/auth/errors";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth/requireUser";
 import {
-  generatePDF,
-  validateExportData,
   EXPORT_LIMITS,
+  generatePDF,
   type ConversationExport,
   type MessageExport,
 } from "@/lib/pdf";
-
-// Force Node.js runtime for Playwright
-export const runtime = "nodejs";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * POST /api/chat/conversations/[id]/export/pdf
@@ -20,7 +16,7 @@ export const runtime = "nodejs";
  * Exports a conversation to PDF format
  */
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -133,27 +129,7 @@ export async function POST(
       ),
     };
 
-    // 6. Validate export data
-    try {
-      validateExportData(exportData);
-    } catch (validationError) {
-      console.error("Export data validation failed:", validationError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            message:
-              validationError instanceof Error
-                ? validationError.message
-                : "Invalid export data",
-            code: "VALIDATION_ERROR",
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // 7. Generate PDF
+    // 6. Generate PDF
     let pdfBuffer: Buffer;
     try {
       pdfBuffer = await generatePDF(exportData);
