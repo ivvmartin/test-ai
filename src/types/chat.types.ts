@@ -18,6 +18,7 @@ export interface Message {
 }
 
 export interface CreateConversationRequest {
+  id?: string;
   title?: string;
 }
 

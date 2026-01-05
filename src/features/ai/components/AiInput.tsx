@@ -12,6 +12,7 @@ interface AiInputProps {
   disabled?: boolean;
   isNearLimit?: boolean;
   isAtLimit?: boolean;
+  resizable?: boolean;
   usage?: {
     used: number;
     monthlyLimit: number;
@@ -28,8 +29,10 @@ export function AiInput({
   disabled,
   isNearLimit,
   isAtLimit,
+  resizable = false,
   usage,
 }: AiInputProps) {
+  // Not used when resizable=true
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 50,
     maxHeight: 200,
@@ -80,11 +83,16 @@ export function AiInput({
               : "Напишете вашия въпрос за ДДС тук…"
           }
           className={cn(
-            "bg-background text-foreground placeholder:text-muted-foreground/70 w-full resize-none border border-input py-4 pr-12 pl-5 leading-relaxed",
-            "min-h-[56px] transition-all duration-200 shadow-sm",
+            "bg-background text-foreground placeholder:text-muted-foreground/70 w-full border border-input py-4 pr-12 pl-5 leading-relaxed",
+            resizable
+              ? "resize-y min-h-[56px] max-h-[400px] overflow-y-auto"
+              : "resize-none min-h-[56px]",
+            "shadow-sm",
+            !resizable && "transition-all duration-200",
             "focus-visible:border-ring focus-visible:ring-[1px] focus-visible:ring-ring/50",
             "placeholder:text-sm sm:placeholder:text-sm",
-            "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
+            !resizable &&
+              "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
             showWarning ? "rounded-b-2xl rounded-t-none" : "rounded-2xl",
             disabled && "cursor-not-allowed opacity-60"
           )}
@@ -92,7 +100,9 @@ export function AiInput({
           onKeyDown={onKeyDown}
           onChange={(e) => {
             onChange(e);
-            adjustHeight();
+            if (!resizable) {
+              adjustHeight();
+            }
           }}
           disabled={disabled}
         />

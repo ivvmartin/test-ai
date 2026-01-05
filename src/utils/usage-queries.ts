@@ -91,7 +91,7 @@ export function useUsageState() {
   return {
     ...query,
     usage,
-    isNearLimit: usage ? usage.percentUsed >= 70 : false,
+    isNearLimit: usage ? usage.percentUsed >= 80 : false,
     isAtLimit: usage ? usage.remaining <= 0 : false,
     percentUsed: usage?.percentUsed ?? 0,
     remaining: usage?.remaining ?? 0,

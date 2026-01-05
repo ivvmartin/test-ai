@@ -83,7 +83,7 @@ function LegalPageContent() {
   const [activeSection, setActiveSection] = useState<SectionId>("tos");
   const { isMobile, setOpenMobile } = useSidebar();
 
-  // Handle hash changes and initial load
+  // 1. Handle hash changes and initial load
   useEffect(() => {
     const updateSectionFromHash = () => {
       const hash = window.location.hash.slice(1);
@@ -116,10 +116,10 @@ function LegalPageContent() {
       }
     };
 
-    // Run on mount
+    // 2. Run on mount
     updateSectionFromHash();
 
-    // Listen for hash changes
+    // 3. Listen for hash changes
     window.addEventListener("hashchange", updateSectionFromHash);
 
     return () => {
@@ -154,7 +154,7 @@ function LegalPageContent() {
             className="flex items-center gap-3 px-2 cursor-pointer transition-transform hover:scale-101"
           >
             <span className="text-lg font-bold text-neutral-900 dark:text-white">
-              ЕВТА Консулт
+              EVTA AI
             </span>
           </Link>
         </SidebarHeader>

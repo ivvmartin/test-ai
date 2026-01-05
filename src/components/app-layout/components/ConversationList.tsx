@@ -57,7 +57,7 @@ export function ConversationList({
         animate={{ opacity: 1 }}
         className="px-2 py-4 text-center text-sm text-muted-foreground"
       >
-        Все още няма чатове
+        Все още няма казуси
       </motion.div>
     );
   }
@@ -75,7 +75,7 @@ export function ConversationList({
               >
                 <MessageSquare className="size-4 shrink-0" />
                 <span className="truncate block overflow-hidden text-ellipsis whitespace-nowrap">
-                  {conversation.title || "Нов чат"}
+                  {conversation.title || "Нов казус"}
                 </span>
               </SidebarMenuButton>
               <DropdownMenu modal={false}>

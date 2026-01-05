@@ -27,9 +27,9 @@ export function DeleteConversationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Изтриване на чат</DialogTitle>
+          <DialogTitle>Изтриване на казус</DialogTitle>
           <DialogDescription>
-            Сигурни ли сте, че искате да изтриете чата &quot;
+            Сигурни ли сте, че искате да изтриете казуса &quot;
             {conversationTitle}
             &quot;? Това действие не може да бъде отменено
           </DialogDescription>

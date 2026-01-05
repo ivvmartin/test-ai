@@ -55,13 +55,13 @@ export function AppSidebar() {
   const exportConversationMutation = useExportConversationMutation();
   const deleteConversationMutation = useDeleteConversationMutation({
     onSuccess: () => {
-      toast.success("Чатът е изтрит успешно");
+      toast.success("Казусът е изтрит успешно");
       setDeleteDialogOpen(false);
       setConversationToDelete(null);
     },
     onError: (error) => {
       console.error("Failed to delete conversation:", error);
-      toast.error("Неуспешно изтриване на чата. Моля, опитайте отново");
+      toast.error("Неуспешно изтриване на казуса. Моля, опитайте отново");
     },
   });
 
@@ -78,7 +78,7 @@ export function AppSidebar() {
     const conversation = conversations.find((c) => c.id === id);
     setConversationToDelete({
       id,
-      title: conversation?.title || "Нов чат",
+      title: conversation?.title || "Нов казус",
     });
     setDeleteDialogOpen(true);
   };
@@ -97,12 +97,12 @@ export function AppSidebar() {
     e?.stopPropagation();
 
     toast.promise(exportConversationMutation.mutateAsync(id), {
-      loading: "Експортиране на чата...",
-      success: "Чатът е експортиран успешно",
+      loading: "Експортиране на казуса...",
+      success: "Казусът е експортиран успешно",
       error: (err) =>
         err instanceof Error
           ? err.message
-          : "Неуспешен експорт на чата. Моля, опитайте отново",
+          : "Неуспешен експорт на казуса. Моля, опитайте отново",
     });
   };
 
@@ -142,7 +142,7 @@ export function AppSidebar() {
             }
           }}
         >
-          <h2 className="font-semibold text-lg">ЕВТА Консулт</h2>
+          <h2 className="font-semibold text-lg">EVTA AI</h2>
         </div>
       </SidebarHeader>
 
@@ -177,7 +177,7 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <div className="flex items-center justify-between">
-            <SidebarGroupLabel>Чатове (последните 10)</SidebarGroupLabel>
+            <SidebarGroupLabel>Казуси (последните 10)</SidebarGroupLabel>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -190,7 +190,7 @@ export function AppSidebar() {
                     <Plus className="size-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Нов чат</TooltipContent>
+                <TooltipContent>Нов казус</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -225,10 +225,10 @@ export function AppSidebar() {
               www.evtaconsult.com
             </a>
             <a
-              href="mailto:office@evtaconsult.com"
+              href="mailto:ai@evtaconsult.com"
               className="block text-primary hover:underline"
             >
-              office@evtaconsult.com
+              ai@evtaconsult.com
             </a>
           </div>
         </div>

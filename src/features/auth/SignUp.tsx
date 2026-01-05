@@ -1,8 +1,5 @@
 "use client";
 
-import { Link } from "@/lib/navigation";
-import { createClient } from "@/lib/supabase/browser";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { CheckCircle2, Eye, EyeOff, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -10,8 +7,11 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { Link } from "@/lib/navigation";
+import { createClient } from "@/lib/supabase/browser";
 import { Button } from "@components/ui/button";
 import { Label } from "@components/ui/label";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const signUpSchema = z
   .object({
@@ -241,7 +241,8 @@ export default function SignUp() {
               Създайте акаунт
             </h2>
             <p className="mt-2 text-sm text-neutral-600">
-              Създайте вашия ЕВТА Консулт акаунт и започнете
+              Създайте вашия EVTA AI акаунт и започнете да получавате бързо и
+              лесно данъчни консултации
             </p>
           </div>
 

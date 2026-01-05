@@ -108,8 +108,7 @@ export default function SignIn() {
               Добре дошли отново
             </h2>
             <p className="mt-2 text-sm text-neutral-600">
-              Влезте, за да продължите към вашето работно пространство в ЕВТА
-              Консулт
+              Влезте в акаунта си, за да продължите
             </p>
           </div>
 
@@ -209,12 +208,12 @@ export default function SignIn() {
           {/* Create Account Link */}
           <div className="text-center mt-8 pt-6 border-t border-neutral-200">
             <p className="text-sm text-neutral-600">
-              Нямате акаунт?{" "}
+              Нямате регистрация?{" "}
               <Link
                 href="/auth/sign-up"
                 className="font-semibold text-neutral-900 hover:underline"
               >
-                Регистрирайте се
+                Създайте акаунт
               </Link>
             </p>
           </div>

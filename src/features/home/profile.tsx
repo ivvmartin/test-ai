@@ -165,8 +165,9 @@ export function Profile() {
             <div className="space-y-1">
               <h3 className="font-semibold text-base">Изтриване на акаунт</h3>
               <p className="text-muted-foreground text-sm">
-                Това действие е необратимо и ще изтрие окончателно вашия акаунт
-                и всички свързани данни
+                Това действие не може да бъде отменено. Това ще изтрие
+                окончателно вашия акаунт и ще премахне всички ваши данни от
+                нашите сървъри
               </p>
             </div>
             <Button

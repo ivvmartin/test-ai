@@ -14,17 +14,17 @@ export function ChatNotFound() {
       <div className="flex w-full max-w-md flex-col items-center justify-center space-y-6 text-center">
         <div className="space-y-2">
           <h1 className="font-semibold text-xl tracking-tight">
-            Чатът не е намерен
+            Казусът не е намерен
           </h1>
           <p className="text-muted-foreground text-sm">
-            Не успяхме да намерим този чат
+            Не успяхме да намерим този казус
           </p>
         </div>
         <button
           onClick={() => navigate("/app/chat")}
           className="bg-[#21355a] text-primary-foreground hover:bg-[#35517f] rounded-lg px-4 py-2 text-sm font-medium transition-colors"
         >
-          Започнете нов чат
+          Започнете нов казус
         </button>
       </div>
     </div>

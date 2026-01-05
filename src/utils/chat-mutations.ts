@@ -41,6 +41,7 @@ interface CreateConversationMutationOptions
 
 /**
  * Creates a new conversation
+ * Note: Optimistic messages are pre-populated in chat.tsx handleSubmit before this mutation runs
  */
 export function useCreateConversationMutation(
   options?: CreateConversationMutationOptions
@@ -50,16 +51,21 @@ export function useCreateConversationMutation(
   return useMutation<Conversation, Error, CreateConversationRequest>({
     mutationFn: createConversation,
     onSuccess: (data) => {
+      // Add conversation to sidebar list
       queryClient.setQueryData<Conversation[]>(
         chatQueryKeys.conversations(),
         (oldConversations) => {
           if (!oldConversations) return [data];
+          // Check if already exists (from optimistic update)
+          if (oldConversations.some((conv) => conv.id === data.id)) {
+            return oldConversations;
+          }
           // Add to the beginning (most recent)
           return [data, ...oldConversations];
         }
       );
 
-      queryClient.setQueryData<Message[]>(chatQueryKeys.messages(data.id), []);
+      // Don't overwrite messages cache - it already has optimistic messages from handleSubmit
 
       queryClient.invalidateQueries({
         queryKey: chatQueryKeys.conversations(),
@@ -170,39 +176,8 @@ export function useStreamingMessage(
         error: null,
       });
 
-      // For new conversations, add optimistic messages here
-      // (existing conversations already have them added in handleSubmit)
-      if (overrideConversationId && overrideConversationId !== conversationId) {
-        const userMessage: Message = {
-          id: `temp-user-${Date.now()}`,
-          conversationId: targetConversationId,
-          userId: "current-user",
-          role: "user",
-          content,
-          createdAt: new Date().toISOString(),
-        };
-
-        const assistantMessageId = `temp-assistant-${Date.now()}`;
-        const assistantMessage: Message = {
-          id: assistantMessageId,
-          conversationId: targetConversationId,
-          userId: "assistant",
-          role: "assistant",
-          content: "...",
-          createdAt: new Date().toISOString(),
-        };
-
-        queryClient.setQueryData<Message[]>(
-          chatQueryKeys.messages(targetConversationId),
-          (old) => {
-            const updated = old
-              ? [...old, userMessage, assistantMessage]
-              : [userMessage, assistantMessage];
-            return updated;
-          }
-        );
-      }
-
+      // Optimistic messages are already added in chat.tsx handleSubmit
+      // This hook just handles streaming updates to the existing assistant message
       const assistantMessageId = `temp-assistant-${Date.now()}`;
 
       try {

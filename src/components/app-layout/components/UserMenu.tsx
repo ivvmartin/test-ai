@@ -1,4 +1,12 @@
-import { ChevronDown, ChevronUp, CreditCard, LogOut, User } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  CreditCard,
+  FileText,
+  LogOut,
+  Shield,
+  User,
+} from "lucide-react";
 
 import { PLAN_METADATA, type PlanKey } from "@/types/usage.types";
 import { Avatar, AvatarFallback } from "@components/ui/avatar";
@@ -6,6 +14,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu";
@@ -18,6 +27,8 @@ interface UserMenuProps {
   onOpenChange: (open: boolean) => void;
   onNavigateProfile: () => void;
   onNavigateBilling: () => void;
+  onNavigateTerms: () => void;
+  onNavigatePrivacy: () => void;
   onLogout: () => void;
   isScrolled?: boolean;
   isLoading?: boolean;
@@ -30,6 +41,8 @@ export function UserMenu({
   onOpenChange,
   onNavigateProfile,
   onNavigateBilling,
+  onNavigateTerms,
+  onNavigatePrivacy,
   onLogout,
   isScrolled = false,
   isLoading = false,
@@ -110,6 +123,7 @@ export function UserMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Моят акаунт</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onNavigateProfile}>
           <User className="mr-2 size-4" />
@@ -118,6 +132,16 @@ export function UserMenu({
         <DropdownMenuItem onClick={onNavigateBilling}>
           <CreditCard className="mr-2 size-4" />
           Абонамент и плащане
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Правна информация</DropdownMenuLabel>
+        <DropdownMenuItem onClick={onNavigateTerms}>
+          <FileText className="mr-2 size-4" />
+          Общи условия
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onNavigatePrivacy}>
+          <Shield className="mr-2 size-4" />
+          Политика за поверителност
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onLogout} className="text-destructive">

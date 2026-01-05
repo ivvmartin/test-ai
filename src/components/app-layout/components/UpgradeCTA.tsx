@@ -2,10 +2,7 @@ import { motion } from "framer-motion";
 import { Crown, Sparkles } from "lucide-react";
 
 import { Button } from "@components/ui/button";
-import {
-  SidebarGroup,
-  SidebarGroupContent,
-} from "@components/ui/sidebar";
+import { SidebarGroup, SidebarGroupContent } from "@components/ui/sidebar";
 
 interface UpgradeCTAProps {
   onUpgrade: () => void;
@@ -57,4 +54,3 @@ export function UpgradeCTA({ onUpgrade, isPending }: UpgradeCTAProps) {
     </SidebarGroup>
   );
 }
-

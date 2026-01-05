@@ -113,7 +113,7 @@ export async function generatePDF(
   ensureFontsRegistered();
 
   const logoDataUrl = await loadLogoDataUrl(
-    path.join(process.cwd(), "public", "brand.png")
+    path.join(process.cwd(), "public", "brand-light.png")
   );
 
   const parsedMessages = await Promise.all(
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#333",
   },
   logo: {
-    width: 48,
+    width: 100,
     height: 48,
     marginRight: 16,
   },

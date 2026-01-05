@@ -86,6 +86,7 @@ export async function GET() {
  *
  * Request Body:
  * {
+ *   "id": "Client-generated UUID for immediate UI transitions",
  *   "title": "Optional chat title"
  * }
  *
@@ -107,17 +108,40 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     const body = await request.json();
+    const clientId = body.id;
     const rawTitle = body.title || null;
 
-    // Sanitize title if provided
+    // 1. Validate client-provided ID if present (must be valid UUID)
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (clientId && !uuidRegex.test(clientId)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            message: "Invalid conversation ID format",
+            code: "INVALID_ID",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // 2. Sanitize title if provided
     const title = rawTitle ? sanitizeText(rawTitle, 200) : null;
+
+    // 3. Build insert object with client-provided ID
+    const insertData: { user_id: string; title: string | null; id?: string } = {
+      user_id: user.userId,
+      title,
+    };
+    if (clientId) {
+      insertData.id = clientId;
+    }
 
     const { data, error } = await supabase
       .from("conversations")
-      .insert({
-        user_id: user.userId,
-        title,
-      })
+      .insert(insertData)
       .select()
       .single();
 

@@ -5,9 +5,10 @@ import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { generateConversationTitle } from "@/lib/ai/title-generator";
 import { useNavigate, useParams } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
-import type { Message } from "@/types/chat.types";
+import type { Conversation, Message } from "@/types/chat.types";
 import { chatQueryKeys } from "@/types/chat.types";
 import { useSidebar } from "@components/ui/sidebar";
 import { Skeleton } from "@components/ui/skeleton";
@@ -45,15 +46,7 @@ export function ChatPage() {
 
   const hasLoadingMessage = messages.some((msg) => msg.content === "...");
 
-  const createConversationMutation = useCreateConversationMutation({
-    onSuccess: (newConversation) => {
-      navigate(`/app/chat/${newConversation.id}`);
-    },
-    onError: (error) => {
-      console.error("Failed to create conversation:", error);
-      toast.error("Неуспешно създаване на чат. Моля, опитайте отново");
-    },
-  });
+  const createConversationMutation = useCreateConversationMutation();
   const deleteConversationMutation = useDeleteConversationMutation();
 
   const { sendMessage, isStreaming } = useStreamingMessage(conversationId, {
@@ -117,12 +110,89 @@ export function ChatPage() {
       let targetConversationId = conversationId;
       let isNewConversation = false;
 
-      // Clear input and set loading state IMMEDIATELY for instant feedback
       setInput("");
       setIsGenerating(true);
 
-      // For existing conversations, add optimistic messages IMMEDIATELY
-      if (targetConversationId) {
+      // Handle new conversation creation - immediate transition with client-generated UUID
+      if (!targetConversationId) {
+        // 1. Generate UUID
+        targetConversationId = crypto.randomUUID();
+        isNewConversation = true;
+
+        // 2. Generate title from user message
+        const generatedTitle = generateConversationTitle(userMessageContent);
+        const now = new Date().toISOString();
+
+        // 3. Add optimistic messages to cache BEFORE navigation
+        const userMessage: Message = {
+          id: `temp-user-${Date.now()}`,
+          conversationId: targetConversationId,
+          userId: "current-user",
+          role: "user",
+          content: userMessageContent,
+          createdAt: now,
+        };
+
+        const assistantMessage: Message = {
+          id: `temp-assistant-${Date.now()}`,
+          conversationId: targetConversationId,
+          userId: "assistant",
+          role: "assistant",
+          content: "...",
+          createdAt: now,
+        };
+
+        // 4. Pre-populate the message cache for the new conversation
+        queryClient.setQueryData<Message[]>(
+          chatQueryKeys.messages(targetConversationId),
+          [userMessage, assistantMessage]
+        );
+
+        // 5. Add optimistic conversation to sidebar cache with generated title
+        const optimisticConversation: Conversation = {
+          id: targetConversationId,
+          userId: "current-user",
+          title: generatedTitle,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        queryClient.setQueryData<Conversation[]>(
+          chatQueryKeys.conversations(),
+          (oldConversations) => {
+            if (!oldConversations) return [optimisticConversation];
+            return [optimisticConversation, ...oldConversations];
+          }
+        );
+
+        // 6. Navigate - do no wait the backend
+        navigate(`/app/chat/${targetConversationId}`);
+
+        // 7. Fire backend conversation creation in parallel (non-blocking)
+        createConversationMutation
+          .mutateAsync({
+            id: targetConversationId,
+            title: generatedTitle,
+          })
+          .catch((error) => {
+            console.error("Failed to create conversation:", error);
+            // Rollback: clear caches and navigate back
+            queryClient.removeQueries({
+              queryKey: chatQueryKeys.messages(targetConversationId!),
+            });
+            queryClient.setQueryData<Conversation[]>(
+              chatQueryKeys.conversations(),
+              (oldConversations) =>
+                oldConversations?.filter(
+                  (conv) => conv.id !== targetConversationId
+                ) || []
+            );
+            navigate("/app/chat");
+            toast.error("Неуспешно създаване на казуса. Моля, опитайте отново");
+            setIsGenerating(false);
+          });
+      } else {
+        // 1. For existing conversations, add optimistic messages immediately
         const userMessage: Message = {
           id: `temp-user-${Date.now()}`,
           conversationId: targetConversationId,
@@ -141,7 +211,7 @@ export function ChatPage() {
           createdAt: new Date().toISOString(),
         };
 
-        // Update cache synchronously for instant UI update
+        // 2. Update cache synchronously for instant UI update
         queryClient.setQueryData<Message[]>(
           chatQueryKeys.messages(targetConversationId),
           (old) =>
@@ -151,25 +221,7 @@ export function ChatPage() {
         );
       }
 
-      // Handle new conversation creation
-      if (!targetConversationId) {
-        try {
-          const newConv = await createConversationMutation.mutateAsync({
-            title: "Нов чат",
-          });
-          targetConversationId = newConv.id;
-          isNewConversation = true;
-
-          navigate(`/app/chat/${targetConversationId}`);
-        } catch (error) {
-          console.error("Failed to create conversation:", error);
-          toast.error("Неуспешно създаване на чат. Моля, опитайте отново");
-          setIsGenerating(false);
-          return;
-        }
-      }
-
-      // Send the message (non-blocking, optimistic updates already done for existing conversations)
+      // Send the message
       sendMessage(userMessageContent, targetConversationId).catch(() => {
         // If this was a newly created conversation and the first message failed,
         // delete the conversation to avoid orphaned empty conversations

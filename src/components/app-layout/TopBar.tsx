@@ -19,6 +19,10 @@ import { useAuthStore } from "@store/auth.store";
 import { useConversationsQuery } from "@utils/chat-queries";
 import { queryClient } from "@utils/queries";
 import { useUsageSnapshot, useUserIdentity } from "@utils/usage-queries";
+import {
+  LegalTopicSelector,
+  type LegalTopic,
+} from "./components/LegalTopicSelector";
 import { UserMenu } from "./components/UserMenu";
 import { useScrollDetection } from "./hooks/useScrollDetection";
 
@@ -34,6 +38,10 @@ export function TopBar() {
   const { open, isMobile } = useSidebar();
 
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isLegalTopicSelectorOpen, setIsLegalTopicSelectorOpen] =
+    useState(false);
+  const [selectedLegalTopic, setSelectedLegalTopic] =
+    useState<LegalTopic>("ДДС");
   const isScrolled = useScrollDetection(20);
 
   const conversationId = location.pathname.startsWith("/app/chat/")
@@ -111,14 +119,23 @@ export function TopBar() {
             </Tooltip>
           </TooltipProvider>
           <Separator orientation="vertical" className="h-6 flex-shrink-0" />
-          <motion.h1
+          <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-sm font-medium truncate"
+            className="flex items-center"
           >
-            {getPageTitle()}
-          </motion.h1>
+            {location.pathname === "/app/chat" && !currentConversation ? (
+              <LegalTopicSelector
+                selectedTopic={selectedLegalTopic}
+                onTopicChange={setSelectedLegalTopic}
+                isOpen={isLegalTopicSelectorOpen}
+                onOpenChange={setIsLegalTopicSelectorOpen}
+              />
+            ) : (
+              <h1 className="text-sm font-medium truncate">{getPageTitle()}</h1>
+            )}
+          </motion.div>
         </div>
 
         <div className="flex items-center gap-1 md:gap-6 flex-shrink-0 ml-2">
@@ -129,6 +146,8 @@ export function TopBar() {
             onOpenChange={setIsProfileDropdownOpen}
             onNavigateProfile={() => navigate("/app/profile")}
             onNavigateBilling={() => navigate("/app/billing")}
+            onNavigateTerms={() => navigate("/legal#tos")}
+            onNavigatePrivacy={() => navigate("/legal#pp")}
             onLogout={handleLogout}
             isScrolled={isScrolled}
             isLoading={isLoadingUserIdentity || isLoadingUsage}

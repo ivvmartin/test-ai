@@ -116,7 +116,7 @@ export async function POST(
     const exportData: ConversationExport = {
       metadata: {
         conversationId: conversation.id,
-        title: conversation.title || "Нов чат",
+        title: conversation.title || "Нов казус",
         exportedAt: new Date().toISOString(),
         locale: "bg-BG",
       },
@@ -149,7 +149,7 @@ export async function POST(
 
     // 8. Generate filename
     const dateStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-    const filename = `chat-${conversationId.substring(0, 8)}-${dateStr}.pdf`;
+    const filename = `case-${conversationId.substring(0, 8)}-${dateStr}.pdf`;
 
     // 9. Return PDF as downloadable file
     return new NextResponse(new Uint8Array(pdfBuffer), {

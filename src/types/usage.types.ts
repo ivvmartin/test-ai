@@ -77,7 +77,7 @@ export const PLAN_METADATA: Record<
   },
   INTERNAL: {
     key: "INTERNAL",
-    name: "Вътрешен",
+    name: "Служебен",
     color: "text-purple-600",
     badgeVariant: "secondary",
   },
