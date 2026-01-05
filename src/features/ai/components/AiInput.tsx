@@ -1,8 +1,8 @@
 import { CornerRightUp } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { cn } from "@/lib/utils";
 import { Textarea } from "@components/ui/textarea";
-import { useAutoResizeTextarea } from "@utils/hooks";
 
 interface AiInputProps {
   value: string;
@@ -12,7 +12,6 @@ interface AiInputProps {
   disabled?: boolean;
   isNearLimit?: boolean;
   isAtLimit?: boolean;
-  resizable?: boolean;
   usage?: {
     used: number;
     monthlyLimit: number;
@@ -20,6 +19,9 @@ interface AiInputProps {
     periodEnd: string;
   };
 }
+
+const MIN_HEIGHT = 56;
+const MAX_HEIGHT = 200;
 
 export function AiInput({
   value,
@@ -29,14 +31,22 @@ export function AiInput({
   disabled,
   isNearLimit,
   isAtLimit,
-  resizable = false,
   usage,
 }: AiInputProps) {
-  // Not used when resizable=true
-  const { textareaRef, adjustHeight } = useAutoResizeTextarea({
-    minHeight: 50,
-    maxHeight: 200,
-  });
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = `${MIN_HEIGHT}px`;
+    const newHeight = Math.min(textarea.scrollHeight, MAX_HEIGHT);
+    textarea.style.height = `${Math.max(MIN_HEIGHT, newHeight)}px`;
+  }, []);
+
+  useEffect(() => {
+    adjustHeight();
+  }, [value, adjustHeight]);
 
   const showWarning = isNearLimit || isAtLimit;
 
@@ -84,26 +94,17 @@ export function AiInput({
           }
           className={cn(
             "bg-background text-foreground placeholder:text-muted-foreground/70 w-full border border-input py-4 pr-12 pl-5 leading-relaxed",
-            resizable
-              ? "resize-y min-h-[56px] max-h-[400px] overflow-y-auto"
-              : "resize-none min-h-[56px]",
+            "resize-none min-h-[56px] overflow-y-auto",
             "shadow-sm",
-            !resizable && "transition-all duration-200",
-            "focus-visible:border-ring focus-visible:ring-[1px] focus-visible:ring-ring/50",
+            "focus-visible:border-ring focus-visible:ring-[0.5px] focus-visible:ring-ring/50",
             "placeholder:text-sm sm:placeholder:text-sm",
-            !resizable &&
-              "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
+            "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
             showWarning ? "rounded-b-2xl rounded-t-none" : "rounded-2xl",
             disabled && "cursor-not-allowed opacity-60"
           )}
           value={value}
           onKeyDown={onKeyDown}
-          onChange={(e) => {
-            onChange(e);
-            if (!resizable) {
-              adjustHeight();
-            }
-          }}
+          onChange={onChange}
           disabled={disabled}
         />
         <button

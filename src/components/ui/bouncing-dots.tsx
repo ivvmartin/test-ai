@@ -1,7 +1,5 @@
 "use client";
 
-import { motion, type Transition } from "framer-motion";
-
 import { cn } from "@/lib/utils";
 
 interface BouncingDotsProps {
@@ -9,45 +7,32 @@ interface BouncingDotsProps {
   dotClassName?: string;
 }
 
-const bounceTransition: Transition = {
-  duration: 1.1,
-  repeat: Infinity,
-  repeatType: "reverse",
-  ease: "easeInOut",
-};
-
+/**
+ * Bouncing dots loading indicator using CSS animations
+ */
 export function BouncingDots({ className, dotClassName }: BouncingDotsProps) {
   return (
     <div className={cn("flex items-center gap-1", className)}>
-      <motion.div
-        className={cn("h-2 w-2 rounded-full bg-primary/60", dotClassName)}
-        animate={{
-          y: [0, -8, 0],
-        }}
-        transition={{
-          ...bounceTransition,
-          delay: 0,
-        }}
+      <span
+        className={cn(
+          "inline-block h-2 w-2 rounded-full bg-primary/60 animate-bounce-dot",
+          dotClassName
+        )}
+        style={{ animationDelay: "0ms" }}
       />
-      <motion.div
-        className={cn("h-2 w-2 rounded-full bg-primary/60", dotClassName)}
-        animate={{
-          y: [0, -8, 0],
-        }}
-        transition={{
-          ...bounceTransition,
-          delay: 0.15,
-        }}
+      <span
+        className={cn(
+          "inline-block h-2 w-2 rounded-full bg-primary/60 animate-bounce-dot",
+          dotClassName
+        )}
+        style={{ animationDelay: "150ms" }}
       />
-      <motion.div
-        className={cn("h-2 w-2 rounded-full bg-primary/60", dotClassName)}
-        animate={{
-          y: [0, -8, 0],
-        }}
-        transition={{
-          ...bounceTransition,
-          delay: 0.3,
-        }}
+      <span
+        className={cn(
+          "inline-block h-2 w-2 rounded-full bg-primary/60 animate-bounce-dot",
+          dotClassName
+        )}
+        style={{ animationDelay: "300ms" }}
       />
     </div>
   );

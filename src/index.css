@@ -121,3 +121,18 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Bouncing dots animation for loading indicator */
+@keyframes bounce-dot {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bounce-dot {
+  animation: bounce-dot 0.8s ease-in-out infinite;
+}

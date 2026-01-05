@@ -98,7 +98,6 @@ export function ChatWelcome({
             disabled={isAtLimit}
             isNearLimit={isNearLimit}
             isAtLimit={isAtLimit}
-            resizable
             usage={usage}
           />
         </form>

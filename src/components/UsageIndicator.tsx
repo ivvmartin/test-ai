@@ -213,7 +213,7 @@ export function UsageIndicator({
               <p className="text-sm font-medium text-yellow-700">
                 Приближавате лимита
               </p>
-              <p className="text-xs text-yellow-600">
+              <p className="text-xs">
                 Помислете за надграждане, за да избегнете прекъсвания
               </p>
             </div>
