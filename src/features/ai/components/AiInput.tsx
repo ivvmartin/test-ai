@@ -87,6 +87,7 @@ export function AiInput({
         <Textarea
           ref={textareaRef}
           id="ai-input-06"
+          enterKeyHint="send"
           placeholder={
             isAtLimit
               ? "Лимитът за използване е достигнат. Надградете, за да продължите."

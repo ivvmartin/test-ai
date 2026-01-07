@@ -260,28 +260,10 @@ export function ChatPage() {
   );
 
   const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        if (
-          !isGenerating &&
-          !isStreaming &&
-          !isAtLimit &&
-          !isLoadingMessages &&
-          !hasLoadingMessage
-        ) {
-          handleSubmit();
-        }
-      }
+    (_event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // All Enter key presses create a new line
     },
-    [
-      handleSubmit,
-      isGenerating,
-      isStreaming,
-      isAtLimit,
-      isLoadingMessages,
-      hasLoadingMessage,
-    ]
+    []
   );
 
   // Check if conversation was not found (404 error)

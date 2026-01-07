@@ -13,12 +13,18 @@ export type LegalTopic = "ДДС" | "ЗКПО" | "ЗДДФЛ" | "ДОПК";
 interface LegalTopicOption {
   value: LegalTopic;
   label: string;
+  subtitle?: string;
   disabled: boolean;
 }
 
 const LEGAL_TOPIC_OPTIONS: LegalTopicOption[] = [
   { value: "ДДС", label: "ДДС", disabled: false },
-  { value: "ЗКПО", label: "ЗКПО", disabled: true },
+  {
+    value: "ЗКПО",
+    label: "ЗКПО",
+    subtitle: "Корпоративен данък",
+    disabled: true,
+  },
   { value: "ЗДДФЛ", label: "ЗДДФЛ", disabled: true },
   { value: "ДОПК", label: "ДОПК", disabled: true },
 ];
@@ -69,18 +75,25 @@ export function LegalTopicSelector({
           )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[140px]">
+      <DropdownMenuContent align="start" className="min-w-[220px]">
         {LEGAL_TOPIC_OPTIONS.map((option) => (
           <DropdownMenuItem
             key={option.value}
             onClick={() => handleSelectTopic(option)}
             disabled={option.disabled}
             className={cn(
-              "flex items-center justify-between gap-3",
+              "flex items-center justify-between gap-3 py-2.5 px-3",
               option.value === selectedTopic && !option.disabled && "bg-accent"
             )}
           >
-            <span className="text-sm md:text-[14px]">{option.label}</span>
+            <div className="flex flex-col">
+              <span className="text-sm md:text-[15px]">{option.label}</span>
+              {option.subtitle && (
+                <span className="text-[11px] md:text-xs text-muted-foreground">
+                  {option.subtitle}
+                </span>
+              )}
+            </div>
             {option.disabled && (
               <span className="text-[10px] md:text-[11px] text-muted-foreground">
                 Скоро!

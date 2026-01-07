@@ -5,7 +5,7 @@ import { Toaster } from "@components/ui/sonner";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "EVTA AI | Данъчен AI",
+  title: "EVTA AI | Данъчен Асистент",
   description: "Вашият интeлигeнтeн данъчeн партньор",
   icons: {
     icon: [

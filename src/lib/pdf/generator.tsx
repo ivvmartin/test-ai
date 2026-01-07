@@ -8,6 +8,7 @@ import {
   Document,
   Font,
   Image,
+  Link,
   Page,
   StyleSheet,
   Text,
@@ -31,7 +32,7 @@ const MARGIN_RIGHT = 45;
 const MARGIN_TOP = 60;
 
 // Footer sizing
-const FOOTER_BOTTOM_OFFSET = 22; // visual offset from bottom edge
+const FOOTER_BOTTOM_OFFSET = 32; // visual offset from bottom edge
 const FOOTER_DIVIDER_HEIGHT = 1;
 const FOOTER_GAP_BELOW_DIVIDER = 6;
 const FOOTER_TEXT_FONT_SIZE = 8;
@@ -144,14 +145,10 @@ function PdfDocument(props: {
 }) {
   const { exportData, logoDataUrl, messages } = props;
 
-  const dateStr = new Date(exportData.metadata.exportedAt).toLocaleString(
-    exportData.metadata.locale
-  );
-
   return (
     <Document
       title={`${exportData.metadata.title} - Експорт`}
-      author="ЕВТА Консулт | Данъчен AI"
+      author="EVTA AI | Данъчен Асистент"
       language={exportData.metadata.locale}
     >
       <Page
@@ -167,7 +164,9 @@ function PdfDocument(props: {
           ))}
         </View>
 
-        <Footer dateStr={dateStr} />
+        <Disclaimer />
+
+        <Footer />
       </Page>
     </Document>
   );
@@ -187,19 +186,43 @@ function Header(props: { title: string; logoDataUrl: string | null }) {
       )}
 
       <View style={styles.headerText}>
-        <Text style={styles.brand}>ЕВТА КОНСУЛТ | ДАНЪЧЕН AI</Text>
+        <Text style={styles.brand}>EVTA AI | ДАНЪЧЕН АСИСТЕНТ</Text>
         <Text style={styles.title}>{title}</Text>
       </View>
     </View>
   );
 }
 
-function Footer(props: { dateStr: string }) {
+function Disclaimer() {
+  return (
+    <View style={styles.disclaimer} wrap>
+      <View style={styles.disclaimerDivider} />
+      <Text style={styles.disclaimerText}>
+        Този отговор е автоматично генериран от AI асистент и има информативен
+        характер. Не представлява правен или данъчен съвет. Възможни са
+        неточности.{"\n\n"}
+        Преди прилагане на данъчното законодателство се консултирайте с
+        квалифициран специалист.{"\n"}
+        Ако предпочитате консултация с човек, можете да се свържете по всяко
+        време с нашия експертен екип от адвокати по данъчно право:{"\n"}
+        <Link src="https://www.evtaconsult.com" style={styles.disclaimerLink}>
+          www.evtaconsult.com
+        </Link>
+        {"\n"}
+        <Link src="mailto:ai@evtaconsult.com" style={styles.disclaimerLink}>
+          ai@evtaconsult.com
+        </Link>
+      </Text>
+    </View>
+  );
+}
+
+function Footer() {
   return (
     <View style={styles.footer} fixed>
       <View style={styles.footerDivider} />
       <Text style={styles.footerText}>
-        Генерирано от ЕВТА Консулт | Данъчен AI • {props.dateStr}
+        Генерирано от EVTA AI | Данъчен Асистент
       </Text>
     </View>
   );
@@ -210,7 +233,7 @@ function Message(props: { role: string; blocks: Block[] }) {
     props.role === "user"
       ? "Вие"
       : props.role === "assistant"
-      ? "ЕВТА AI"
+      ? "EVTA AI"
       : "Система";
 
   return (
@@ -451,7 +474,27 @@ const styles = StyleSheet.create({
   link: {
     textDecoration: "underline",
   },
-
+  disclaimer: {
+    marginTop: 20,
+    marginBottom: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  disclaimerDivider: {
+    height: FOOTER_DIVIDER_HEIGHT,
+    backgroundColor: "#e5e5e5",
+    marginBottom: 12,
+  },
+  disclaimerText: {
+    fontSize: 8,
+    lineHeight: 1.4,
+    color: "#666666",
+    textAlign: "left",
+  },
+  disclaimerLink: {
+    color: "#003d99",
+    textDecoration: "underline",
+  },
   footer: {
     position: "absolute",
     left: MARGIN_LEFT,
