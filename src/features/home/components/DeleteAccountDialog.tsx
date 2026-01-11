@@ -73,16 +73,19 @@ export function DeleteAccountDialog({
           <div className="flex items-center gap-3">
             <DialogTitle className="text-left">Изтриване на акаунт</DialogTitle>
           </div>
-          <DialogDescription className="text-left space-y-2">
-            <p>
-              Това действие не може да бъде отменено. Това ще изтрие окончателно
-              вашия акаунт и ще премахне всички ваши данни от нашите сървъри.
-            </p>
-            {hasActiveSubscription && (
-              <p className="font-semibold text-destructive">
-                Вашият активен абонамент ще бъде АНУЛИРИРАН незабавно
-              </p>
-            )}
+          <DialogDescription className="text-left space-y-2" asChild>
+            <div>
+              <span className="block">
+                Това действие не може да бъде отменено. Това ще изтрие
+                окончателно вашия акаунт и ще премахне всички ваши данни от
+                нашите сървъри.
+              </span>
+              {hasActiveSubscription && (
+                <span className="block font-semibold text-destructive">
+                  Вашият активен абонамент ще бъде АНУЛИРИРАН незабавно
+                </span>
+              )}
+            </div>
           </DialogDescription>
         </DialogHeader>
 

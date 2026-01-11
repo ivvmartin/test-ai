@@ -113,9 +113,18 @@ export async function DELETE(request: NextRequest) {
       }
     );
 
+    // Cancel any subscription that exists in Stripe (active, trialing, past_due, or paused)
+    // We should cancel as long as it's not already in a terminal state (canceled, unpaid, incomplete_expired)
+    const activeStripeStatuses = [
+      "active",
+      "trialing",
+      "past_due",
+      "incomplete",
+      "paused",
+    ];
     if (
       subscription?.stripe_subscription_id &&
-      (subscription.status === "active" || subscription.status === "trialing")
+      activeStripeStatuses.includes(subscription.status)
     ) {
       try {
         const stripeService = new StripeBillingService();
