@@ -231,9 +231,9 @@ class GeminiService {
   ): AsyncGenerator<{ text?: string; usage?: TokenUsage; done: boolean }> {
     const startTime = Date.now();
     const modelName = "gemini-2.5-flash";
-    const temperature = 0;
-    const topK = 1;
-    const topP = 1;
+    const temperature = 0.2;
+    const topK = 20;
+    const topP = 0.8;
 
     console.log("🤖 [LLM Call - Response Generation] Starting...");
     console.log("📊 [LLM Config]", {
