@@ -55,7 +55,7 @@ export function UserMenu({
   if (isLoading) {
     return (
       <div className="flex items-center gap-1 md:gap-2.5 rounded-lg px-1 md:px-2.5 py-1 md:py-1.5">
-        <Skeleton className="rounded-2xl flex-shrink-0 size-7" />
+        <Skeleton className="rounded-2xl flex-shrink-0 size-8 md:size-7" />
         <div className="hidden md:flex flex-col items-start gap-1">
           <Skeleton className="h-3.5 w-28" />
           <Skeleton className="h-3 w-20" />
@@ -68,7 +68,7 @@ export function UserMenu({
     <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <button className="flex cursor-pointer items-center gap-1 md:gap-2.5 rounded-lg px-1 md:px-2.5 py-1 md:py-1.5 transition-colors hover:bg-accent">
-          <Avatar className="rounded-2xl flex-shrink-0 size-7">
+          <Avatar className="rounded-2xl flex-shrink-0 size-8 md:size-7">
             {avatarUrl && <AvatarImage src={avatarUrl} alt="User avatar" />}
             <AvatarFallback className="bg-muted rounded-2xl flex items-center justify-center text-xs">
               {userEmail?.replace(/@.*$/, "")[0].toUpperCase() || "U"}
@@ -89,12 +89,12 @@ export function UserMenu({
           </div>
           {isOpen ? (
             <ChevronUp
-              className="size-4 text-muted-foreground flex-shrink-0"
+              className="size-5 md:size-4 text-muted-foreground flex-shrink-0"
               aria-hidden="true"
             />
           ) : (
             <ChevronDown
-              className="size-4 text-muted-foreground flex-shrink-0"
+              className="size-5 md:size-4 text-muted-foreground flex-shrink-0"
               aria-hidden="true"
             />
           )}

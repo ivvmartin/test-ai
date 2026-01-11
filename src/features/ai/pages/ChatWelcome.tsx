@@ -1,3 +1,5 @@
+import { Info } from "lucide-react";
+
 import {
   Popover,
   PopoverContent,
@@ -45,45 +47,41 @@ export function ChatWelcome({
     >
       <div className="flex w-full max-w-xl flex-col items-center justify-center space-y-10">
         <div className="space-y-8 text-center">
-          <Popover>
-            <PopoverTrigger asChild>
-              <h1
-                className="inline cursor-pointer font-semibold text-2xl tracking-tight transition-colors md:text-2xl"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(to right, currentColor 0px, currentColor 10px, transparent 10px, transparent 18px)",
-                  backgroundSize: "100% 1.5px",
-                  backgroundPosition: "0 100%",
-                  backgroundRepeat: "repeat-x",
-                  paddingBottom: "2px",
-                  color: "inherit",
-                }}
+          <h1 className="inline font-semibold text-2xl tracking-tight md:text-2xl">
+            Незабавен AI отговор за българския ДДС
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="ml-2 inline-flex translate-y-[3px] cursor-pointer items-center text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <Info className="size-5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="max-w-[320px] py-3 shadow-none"
+                side="bottom"
+                align="center"
               >
-                Незабавен AI отговор за българския ДДС
-              </h1>
-            </PopoverTrigger>
-            <PopoverContent
-              className="max-w-[320px] py-3 shadow-none"
-              side="bottom"
-              align="center"
-            >
-              <div className="space-y-3">
-                <p className="text-muted-foreground text-xs">
-                  Отговорът ще бъде основан на актуалното законодателство в сила
-                  към днешна дата (последно изменение в сила от 01.01.2026 г.).
-                </p>
-                <div className="space-y-1.5">
-                  <p className="font-medium text-[13px]">
-                    За най-добри резултати:
+                <div className="space-y-3">
+                  <p className="text-muted-foreground text-xs">
+                    Отговорът ще бъде основан на актуалното законодателство в
+                    сила към днешна дата (последно изменение в сила от
+                    01.01.2026 г.).
                   </p>
-                  <ul className="list-disc space-y-1 pl-4 text-muted-foreground text-xs">
-                    <li>Опишете фактите подробно;</li>
-                    <li>Формулирайте въпроса си конкретно</li>
-                  </ul>
+                  <div className="space-y-1.5">
+                    <p className="font-medium text-[13px]">
+                      За най-добри резултати:
+                    </p>
+                    <ul className="list-disc space-y-1 pl-4 text-muted-foreground text-xs">
+                      <li>Опишете фактите подробно;</li>
+                      <li>Формулирайте въпроса си конкретно</li>
+                    </ul>
+                  </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
+          </h1>
           <p className="!mt-3 text-muted-foreground text-base md:text-md px-4">
             Получавайте бързи, точни и уверени справки по законодателството,
             създадени за счетоводители и адвокати

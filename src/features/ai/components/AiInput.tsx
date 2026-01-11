@@ -80,7 +80,7 @@ export function AiInput({
             "resize-none min-h-[56px] overflow-y-auto",
             "shadow-sm",
             "focus-visible:ring-0 focus-visible:border-input",
-            "placeholder:text-sm sm:placeholder:text-sm",
+            "placeholder:text-xs sm:placeholder:text-sm",
             "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
             hasWarningBanner ? "rounded-b-2xl rounded-t-none" : "rounded-2xl",
             disabled && "cursor-not-allowed opacity-60"

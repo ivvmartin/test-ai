@@ -25,8 +25,8 @@ export function UpgradeCTA({ onUpgrade, isPending }: UpgradeCTAProps) {
             <div className="flex items-center gap-3">
               <Crown className="size-5 shrink-0" />
               <div className="space-y-0.5">
-                <p className="font-semibold text-[12.5px]">Надгради плана</p>
-                <p className="text-xs text-white/80 mr-2">
+                <p className="font-semibold text-[13px]">Надгради плана</p>
+                <p className="text-[11px] text-white/80 mr-2">
                   Отключи повече възможности и консултации
                 </p>
               </div>
