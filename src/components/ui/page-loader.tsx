@@ -8,8 +8,6 @@ export function PageLoader() {
   const [shouldShow, setShouldShow] = useState(false);
 
   useEffect(() => {
-    // Only show loader if loading takes more than 200ms
-    // This prevents flashing for fast navigations
     const showTimer = setTimeout(() => {
       setShouldShow(true);
     }, 300);
@@ -28,7 +26,7 @@ export function PageLoader() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="flex h-screen w-full items-center justify-center bg-background"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}

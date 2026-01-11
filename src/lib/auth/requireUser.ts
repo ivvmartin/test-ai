@@ -1,10 +1,12 @@
 import "server-only";
+
 import { createClient } from "@/lib/supabase/server";
 import { UnauthorizedError } from "./errors";
 
 export interface AuthenticatedUser {
   userId: string;
   email?: string;
+  createdAt?: string;
 }
 
 /**
@@ -27,5 +29,6 @@ export async function requireUser(): Promise<AuthenticatedUser> {
   return {
     userId: user.id,
     email: user.email,
+    createdAt: user.created_at,
   };
 }

@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
-import { Crown, Sparkles } from "lucide-react";
+import { ArrowRight, Crown } from "lucide-react";
 
-import { Button } from "@components/ui/button";
 import { SidebarGroup, SidebarGroupContent } from "@components/ui/sidebar";
 
 interface UpgradeCTAProps {
@@ -12,44 +11,29 @@ interface UpgradeCTAProps {
 export function UpgradeCTA({ onUpgrade, isPending }: UpgradeCTAProps) {
   return (
     <SidebarGroup>
-      <SidebarGroupContent className="px-2 py-3">
-        <motion.div
+      <SidebarGroupContent className="px-2 py-2">
+        <motion.button
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-lg bg-[#35517f] p-4 text-white shadow-lg"
+          onClick={onUpgrade}
+          disabled={isPending}
+          className="group relative w-full overflow-hidden rounded-lg bg-[#35517f] p-4 text-left text-white shadow-md transition-all hover:bg-[#2d4670] disabled:opacity-50"
         >
-          <div className="absolute -right-4 -top-4 size-24 rounded-full bg-white/10" />
-          <div className="absolute -bottom-6 -left-6 size-32 rounded-full bg-white/5" />
-          <div className="relative space-y-3">
-            <div className="flex items-center gap-2">
-              <Crown className="size-5" />
-              <span className="font-semibold text-sm">
-                Надградете до Premium
-              </span>
+          <div className="absolute -right-3 -top-3 size-16 rounded-full bg-white/10" />
+          <div className="absolute -bottom-4 -left-4 size-20 rounded-full bg-white/5" />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Crown className="size-5 shrink-0" />
+              <div className="space-y-0.5">
+                <p className="font-semibold text-[12.5px]">Надгради плана</p>
+                <p className="text-xs text-white/80 mr-2">
+                  Отключи повече възможности и консултации
+                </p>
+              </div>
             </div>
-            <p className="text-xs leading-relaxed text-white/90">
-              Получете 50 съобщения/месец и отключете премиум функции
-            </p>
-            <Button
-              onClick={onUpgrade}
-              disabled={isPending}
-              size="sm"
-              className="w-full gap-2 bg-white text-[#35517f] hover:bg-white/90"
-            >
-              {isPending ? (
-                <>
-                  <span className="size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Зареждане...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="size-3" />
-                  Надградете сега
-                </>
-              )}
-            </Button>
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           </div>
-        </motion.div>
+        </motion.button>
       </SidebarGroupContent>
     </SidebarGroup>
   );

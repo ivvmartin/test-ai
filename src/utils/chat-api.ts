@@ -1,35 +1,30 @@
 import apiClient from "@/lib/axios";
 import type {
-  Conversation,
-  ConversationResponse,
-  ConversationsListResponse,
-  CreateConversationRequest,
+  Chat,
+  ChatResponse,
+  ChatsListResponse,
+  CreateChatRequest,
   Message,
   MessagesListResponse,
 } from "@/types/chat.types";
 
 /**
  * Creates a new chat for the authenticated user.
- * Enforces 10-chat limit on the backend
+ * Enforces 25-chat limit on the backend
  */
-export async function createConversation(
-  payload: CreateConversationRequest = {}
-): Promise<Conversation> {
-  const response = await apiClient.post<ConversationResponse>(
-    "/chat/chats",
-    payload
-  );
+export async function createChat(
+  payload: CreateChatRequest = {}
+): Promise<Chat> {
+  const response = await apiClient.post<ChatResponse>("/chat/chats", payload);
   return response.data.data;
 }
 
 /**
- * Retrieves the user's most recent 10 chats.
+ * Retrieves the user's most recent 25 chats.
  * Sorted by updatedAt DESC, createdAt DESC, _id DESC
  */
-export async function getConversations(): Promise<Conversation[]> {
-  const response = await apiClient.get<ConversationsListResponse>(
-    "/chat/chats"
-  );
+export async function getChats(): Promise<Chat[]> {
+  const response = await apiClient.get<ChatsListResponse>("/chat/chats");
   return response.data.data;
 }
 
@@ -37,17 +32,17 @@ export async function getConversations(): Promise<Conversation[]> {
  * Retrieves all messages for a specific chat.
  * Messages are sorted by createdAt ASC
  */
-export async function getMessages(conversationId: string): Promise<Message[]> {
+export async function getMessages(chatId: string): Promise<Message[]> {
   console.log(
     "🌐 [API] getMessages called for chat:",
-    conversationId,
+    chatId,
     "at",
     new Date().toISOString()
   );
   console.trace("🌐 [API] getMessages call stack");
 
   const response = await apiClient.get<MessagesListResponse>(
-    `/chat/chats/${conversationId}`
+    `/chat/chats/${chatId}`
   );
 
   console.log(
@@ -67,7 +62,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
  * NOTE: Uses fetch instead of axios because axios doesn't handle SSE streaming well
  */
 export async function addMessageWithStreaming(
-  conversationId: string,
+  chatId: string,
   content: string,
   callbacks: {
     onChunk: (text: string) => void;
@@ -79,7 +74,7 @@ export async function addMessageWithStreaming(
     onError: (error: string) => void;
   }
 ): Promise<void> {
-  const response = await fetch(`/api/chat/chats/${conversationId}/messages`, {
+  const response = await fetch(`/api/chat/chats/${chatId}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -163,21 +158,19 @@ export async function addMessageWithStreaming(
 /**
  * Deletes a chat and all its messages
  */
-export async function deleteConversation(
-  conversationId: string
-): Promise<void> {
-  await apiClient.delete(`/chat/chats/${conversationId}`);
+export async function deleteChat(chatId: string): Promise<void> {
+  await apiClient.delete(`/chat/chats/${chatId}`);
 }
 
 /**
- * Exports a conversation to PDF format
+ * Exports a chat to PDF format
  * Returns the PDF blob and suggested filename
  */
-export async function exportConversationToPdf(
-  conversationId: string
+export async function exportChatToPdf(
+  chatId: string
 ): Promise<{ blob: Blob; filename: string }> {
   const response = await apiClient.post(
-    `/chat/chats/${conversationId}/export/pdf`,
+    `/chat/chats/${chatId}/export/pdf`,
     {},
     {
       responseType: "blob",
@@ -189,7 +182,7 @@ export async function exportConversationToPdf(
 
   // Extract filename from Content-Disposition header or use default
   const contentDisposition = response.headers["content-disposition"];
-  let filename = `chat-${conversationId.substring(0, 8)}-${
+  let filename = `chat-${chatId.substring(0, 8)}-${
     new Date().toISOString().split("T")[0]
   }.pdf`;
 

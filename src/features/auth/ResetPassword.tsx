@@ -3,13 +3,16 @@
 import { Link } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/browser";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@components/ui/button";
+import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
+import { ProductCard } from "./components/ProductCard";
 
 const resetPasswordSchema = z.object({
   email: z
@@ -61,14 +64,42 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center p-4 pl-4">
-      <div className="w-full max-w-lg">
-        <div className="rounded-2xl backdrop-blur-sm bg-white/90 p-10 md:p-12 shadow-xl border border-neutral-200">
+    <div className="flex h-screen">
+      {/* Left-end side - Product Card */}
+      <div className="hidden lg:block lg:w-[40%] xl:w-[45%] p-6">
+        <div className="h-full w-full rounded-xl overflow-hidden">
+          <ProductCard />
+        </div>
+      </div>
+
+      {/* Right side - Form */}
+      <div className="flex flex-1 flex-col justify-center px-6 py-8 lg:px-16 xl:px-24">
+        <div className="mx-auto w-full max-w-md">
+          {/* Brand Logo and Slogan */}
+          <div className="mb-6">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="relative h-24 w-24 flex-shrink-0">
+                <Image
+                  src="/brand-light.png"
+                  alt="EVTA AI Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+
+              <div className="h-8 w-px bg-neutral-300" />
+              <span className="text-sm font-semibold text-neutral-700">
+                Вашият данъчен партньор
+              </span>
+            </div>
+          </div>
+
           {/* Form Header */}
-          <div className="mb-6 text-center">
-            <h2 className="text-2xl font-bold tracking-tight text-neutral-900">
+          <div className="mb-5">
+            <h1 className="text-xl font-bold tracking-tight text-neutral-900">
               Нулиране на парола
-            </h2>
+            </h1>
             <p className="mt-2 text-sm text-neutral-600">
               Въведете имейл адреса си и ще ви изпратим линк за нулиране на
               паролата
@@ -78,17 +109,15 @@ export default function ResetPassword() {
           {/* Reset Password Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Имейл адрес</Label>
-              <div className="relative">
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  autoComplete="email"
-                  className="h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  {...register("email")}
-                />
-              </div>
+              <Label htmlFor="email">Имейл</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
+                autoComplete="email"
+                className="h-12 w-full mt-1"
+                {...register("email")}
+              />
               {formState.errors.email && (
                 <p className="text-sm text-red-600">
                   {formState.errors.email.message}
@@ -98,7 +127,7 @@ export default function ResetPassword() {
 
             <Button
               type="submit"
-              className="h-11 w-full"
+              className="h-12 w-full rounded-full text-base font-medium mt-4"
               disabled={isLoading || !formState.isValid || emailSent}
             >
               {isLoading
@@ -107,20 +136,16 @@ export default function ResetPassword() {
                 ? "Имейлът е изпратен!"
                 : "Изпрати линк за нулиране"}
             </Button>
-          </form>
 
-          {/* Back to Sign In Link */}
-          <div className="text-center mt-8 pt-6 border-t border-neutral-200">
-            <p className="text-sm text-neutral-600">
-              Спомнихте си паролата?{" "}
+            <div className="pt-4 text-center">
               <Link
                 href="/auth/sign-in"
-                className="font-semibold text-neutral-900 hover:underline"
+                className="text-sm font-medium text-primary hover:underline"
               >
-                Влезте оттук
+                ← Обратно към вход
               </Link>
-            </p>
-          </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-export type PlanKey = "FREE" | "PAID" | "INTERNAL";
+export type PlanKey = "TRIAL" | "PAID" | "FREE_INTERNAL" | "INTERNAL";
 
 export interface BillingPlan {
   plan: PlanKey;

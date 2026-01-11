@@ -20,7 +20,7 @@ import path from "path";
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
 
-import type { ConversationExport } from "./types";
+import type { ChatExport } from "./types";
 
 // A4 in points
 const PAGE_WIDTH = 595.28;
@@ -107,9 +107,7 @@ function ensureFontsRegistered(): void {
 
 /* =============================== MAIN ENTRY =============================== */
 
-export async function generatePDF(
-  exportData: ConversationExport
-): Promise<Buffer> {
+export async function generatePDF(exportData: ChatExport): Promise<Buffer> {
   validateExportData(exportData);
   ensureFontsRegistered();
 
@@ -139,7 +137,7 @@ export async function generatePDF(
 }
 
 function PdfDocument(props: {
-  exportData: ConversationExport;
+  exportData: ChatExport;
   logoDataUrl: string | null;
   messages: Array<{ role: string; blocks: Block[] }>;
 }) {
@@ -316,7 +314,6 @@ function InlineRuns(props: { runs: InlineRun[] }) {
             return <Text key={i}>{r.value}</Text>;
 
           case "hardBreak":
-            // Newline within text flow
             return <Text key={i}>{"\n"}</Text>;
 
           case "strong":
@@ -763,9 +760,9 @@ async function loadLogoDataUrl(filePath: string): Promise<string | null> {
   }
 }
 
-export function validateExportData(exportData: ConversationExport): void {
-  if (!exportData.metadata?.conversationId) {
-    throw new Error("Missing conversation ID in export metadata");
+export function validateExportData(exportData: ChatExport): void {
+  if (!exportData.metadata?.chatId) {
+    throw new Error("Missing chat ID in export metadata");
   }
   if (!exportData.metadata?.title) {
     throw new Error("Missing title in export metadata");
@@ -774,7 +771,7 @@ export function validateExportData(exportData: ConversationExport): void {
     throw new Error("Invalid messages array in export data");
   }
   if (exportData.messages.length === 0) {
-    throw new Error("Cannot export conversation with no messages");
+    throw new Error("Cannot export chat with no messages");
   }
 
   for (const message of exportData.messages) {

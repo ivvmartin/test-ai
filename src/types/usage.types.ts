@@ -1,4 +1,4 @@
-export type PlanKey = "FREE" | "PAID" | "INTERNAL";
+export type PlanKey = "TRIAL" | "PAID" | "FREE_INTERNAL" | "INTERNAL";
 
 export type SubscriptionSource =
   | "user_override"
@@ -63,10 +63,10 @@ export const PLAN_METADATA: Record<
   PlanKey,
   Omit<PlanMetadata, "monthlyLimit">
 > = {
-  FREE: {
-    key: "FREE",
-    name: "Безплатен",
-    color: "text-gray-600",
+  TRIAL: {
+    key: "TRIAL",
+    name: "Пробен",
+    color: "text-blue-600",
     badgeVariant: "outline",
   },
   PAID: {
@@ -74,6 +74,12 @@ export const PLAN_METADATA: Record<
     name: "Premium",
     color: "#21355a",
     badgeVariant: "default",
+  },
+  FREE_INTERNAL: {
+    key: "FREE_INTERNAL",
+    name: "Безплатен",
+    color: "text-green-600",
+    badgeVariant: "outline",
   },
   INTERNAL: {
     key: "INTERNAL",

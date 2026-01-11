@@ -1,26 +1,32 @@
-/* =============================== PLAN TYPES =============================== */
-
-export type PlanKey = "FREE" | "PAID" | "INTERNAL";
+export type PlanKey = "TRIAL" | "PAID" | "FREE_INTERNAL" | "INTERNAL";
 
 export interface PlanConfig {
   key: PlanKey;
   monthlyLimit: number;
   name: string;
   description: string;
+  isTrialPlan?: boolean; // True for TRIAL plan (7-day period, no monthly reset)
 }
 
 export const PLANS: Record<PlanKey, PlanConfig> = {
-  FREE: {
-    key: "FREE",
-    monthlyLimit: 10,
-    name: "Free Plan",
-    description: "Default plan for new users",
+  TRIAL: {
+    key: "TRIAL",
+    monthlyLimit: 15,
+    name: "Trial Plan",
+    description: "7-day trial for new users (15 messages total)",
+    isTrialPlan: true,
   },
   PAID: {
     key: "PAID",
     monthlyLimit: 50,
     name: "Paid Plan",
     description: "Premium plan via Stripe",
+  },
+  FREE_INTERNAL: {
+    key: "FREE_INTERNAL",
+    monthlyLimit: 25,
+    name: "Free Internal Plan",
+    description: "Internal free plan (25 messages per month)",
   },
   INTERNAL: {
     key: "INTERNAL",
@@ -29,8 +35,6 @@ export const PLANS: Record<PlanKey, PlanConfig> = {
     description: "Internal/admin users",
   },
 } as const;
-
-/* =========================== SUBSCRIPTION TYPES =========================== */
 
 export type SubscriptionStatus =
   | "inactive"
@@ -49,8 +53,6 @@ export interface Subscription {
   updatedAt: Date;
 }
 
-/* =========================== USAGE COUNTER TYPES ========================== */
-
 export interface UsageCounter {
   id: string;
   userId: string;
@@ -60,14 +62,10 @@ export interface UsageCounter {
   updatedAt: Date;
 }
 
-/* =========================== USER METADATA TYPES ========================== */
-
 export interface UserMetadata {
   planOverride?: PlanKey | null;
   monthlyLimitOverride?: number | null;
 }
-
-/* ========================== SERVICES RESULT TYPES ========================= */
 
 export type EntitlementSource =
   | "user_override"
@@ -102,13 +100,10 @@ export interface ConsumeUsageResult {
 }
 
 export interface ConsumeUsageMeta {
-  conversationId?: string;
+  chatId?: string;
   model?: string;
   tokensEstimate?: number;
 }
-
-/* ============================ PERIOD UTILITIES ============================ */
-
 export interface PeriodInfo {
   periodKey: string;
   periodStart: Date;
@@ -116,7 +111,41 @@ export interface PeriodInfo {
 }
 
 /**
+ * Get trial period info (7 days from user creation, no monthly reset)
+ */
+export function getTrialPeriodInfo(userCreatedAt: Date): PeriodInfo {
+  // 1. Normalize user creation date to UTC midnight
+  const anchor = new Date(
+    Date.UTC(
+      userCreatedAt.getUTCFullYear(),
+      userCreatedAt.getUTCMonth(),
+      userCreatedAt.getUTCDate(),
+      0,
+      0,
+      0,
+      0
+    )
+  );
+
+  // 2. Trial period is exactly 7 days from creation
+  const periodStart = anchor;
+  const periodEnd = new Date(anchor.getTime() + 7 * 24 * 60 * 60 * 1000); // +7 days
+
+  // 3. Format period key as YYYY-MM-DD (using period start date)
+  const periodKey = `${periodStart.getUTCFullYear()}-${String(
+    periodStart.getUTCMonth() + 1
+  ).padStart(2, "0")}-${String(periodStart.getUTCDate()).padStart(2, "0")}`;
+
+  return {
+    periodKey,
+    periodStart,
+    periodEnd,
+  };
+}
+
+/**
  * Get period info for a given date based on user's billing cycle anchor
+ * (for monthly plans like PAID, FREE_INTERNAL, INTERNAL)
  */
 export function getPeriodInfo(
   userCreatedAt: Date,

@@ -1,6 +1,6 @@
 export type MessageRole = "user" | "assistant" | "system";
 
-export interface Conversation {
+export interface Chat {
   id: string;
   userId: string;
   title: string | null;
@@ -10,14 +10,14 @@ export interface Conversation {
 
 export interface Message {
   id: string;
-  conversationId: string;
+  chatId: string;
   userId: string;
   role: MessageRole;
   content: string;
   createdAt: string;
 }
 
-export interface CreateConversationRequest {
+export interface CreateChatRequest {
   id?: string;
   title?: string;
 }
@@ -40,20 +40,19 @@ export interface ApiErrorResponse {
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
-export type ConversationResponse = ApiSuccessResponse<Conversation>;
-export type ConversationsListResponse = ApiSuccessResponse<Conversation[]>;
+export type ChatResponse = ApiSuccessResponse<Chat>;
+export type ChatsListResponse = ApiSuccessResponse<Chat[]>;
 export type MessageResponse = ApiSuccessResponse<Message>;
 export type MessagesListResponse = ApiSuccessResponse<Message[]>;
 
-export interface ConversationWithMessages extends Conversation {
+export interface ChatWithMessages extends Chat {
   messages: Message[];
 }
 
 export const chatQueryKeys = {
   all: ["chat"] as const,
-  conversations: () => [...chatQueryKeys.all, "conversations"] as const,
-  conversation: (id: string) =>
-    [...chatQueryKeys.all, "conversation", id] as const,
-  messages: (conversationId: string) =>
-    [...chatQueryKeys.all, "messages", conversationId] as const,
+  chats: () => [...chatQueryKeys.all, "chats"] as const,
+  chat: (id: string) => [...chatQueryKeys.all, "chat", id] as const,
+  messages: (chatId: string) =>
+    [...chatQueryKeys.all, "messages", chatId] as const,
 };

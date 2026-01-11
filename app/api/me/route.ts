@@ -15,7 +15,8 @@ import { usageService } from "@/lib/usage";
  *   "data": {
  *     "userId": "uuid",
  *     "email": "user@example.com",
- *     "plan": "FREE" | "PAID" | "INTERNAL"
+ *     "plan": "TRIAL" | "PAID" | "FREE_INTERNAL" | "INTERNAL",
+ *     "createdAt": "2025-01-05T12:00:00.000Z"
  *   }
  * }
  *
@@ -40,6 +41,7 @@ export async function GET() {
         userId: user.userId,
         email: user.email,
         plan: entitlement.planKey,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {

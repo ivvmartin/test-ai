@@ -3,15 +3,16 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { cn } from "@/lib/utils";
 import { Textarea } from "@components/ui/textarea";
+import { useUserIdentity } from "@utils/usage-queries";
 
 interface AiInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit: () => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   disabled?: boolean;
   isNearLimit?: boolean;
   isAtLimit?: boolean;
+  hasWarningBanner?: boolean;
   usage?: {
     used: number;
     monthlyLimit: number;
@@ -27,13 +28,14 @@ export function AiInput({
   value,
   onChange,
   onSubmit,
-  onKeyDown,
   disabled,
   isNearLimit,
   isAtLimit,
+  hasWarningBanner,
   usage,
 }: AiInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { data: userIdentity } = useUserIdentity();
 
   const adjustHeight = useCallback(() => {
     const textarea = textareaRef.current;
@@ -48,63 +50,42 @@ export function AiInput({
     adjustHeight();
   }, [value, adjustHeight]);
 
-  const showWarning = isNearLimit || isAtLimit;
+  const isPremium =
+    userIdentity?.plan === "PAID" || userIdentity?.plan === "INTERNAL";
+
+  const getPlaceholder = () => {
+    if (isAtLimit) {
+      return isPremium
+        ? "Лимитът за използване е достигнат"
+        : "Лимитът е достигнат. Надградете за повече";
+    }
+    if (isNearLimit && usage) {
+      return isPremium
+        ? `${usage.remaining} оставащи съобщения · Напишете вашия въпрос тук…`
+        : `${usage.remaining} оставащи · Надградете за повече → Напишете въпрос тук…`;
+    }
+    return "Напишете вашия въпрос за ДДС тук…";
+  };
 
   return (
     <div className="w-full">
       <div className="relative mx-auto w-full max-w-4xl rounded-2xl bg-muted/50 shadow-lg">
-        {/* Warning Banner */}
-        {showWarning && (
-          <div
-            className={cn(
-              "flex items-center justify-between rounded-t-2xl border border-b-0 px-5 py-2.5 transition-all duration-200 bg-background"
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  "font-medium text-xs",
-                  isAtLimit ? "text-destructive" : "text-yellow-700"
-                )}
-              >
-                {usage?.remaining || 0} оставащи съобщения
-              </span>
-            </div>
-            <a
-              href="/app/billing"
-              className={cn(
-                "font-medium underline-offset-4 hover:underline text-xs",
-                isAtLimit ? "text-destructive" : "text-yellow-700"
-              )}
-            >
-              {isAtLimit
-                ? "Надградете, за да продължите"
-                : "Надградете за повече"}
-            </a>
-          </div>
-        )}
-
         <Textarea
           ref={textareaRef}
           id="ai-input-06"
           enterKeyHint="send"
-          placeholder={
-            isAtLimit
-              ? "Лимитът за използване е достигнат. Надградете, за да продължите."
-              : "Напишете вашия въпрос за ДДС тук…"
-          }
+          placeholder={getPlaceholder()}
           className={cn(
-            "bg-background text-foreground placeholder:text-muted-foreground/70 w-full border border-input py-4 pr-12 pl-5 leading-relaxed",
+            "bg-background text-foreground placeholder:text-muted-foreground/70 w-full border border-input py-4 pr-16 pl-5 leading-relaxed",
             "resize-none min-h-[56px] overflow-y-auto",
             "shadow-sm",
-            "focus-visible:border-ring focus-visible:ring-[0.5px] focus-visible:ring-ring/50",
+            "focus-visible:ring-0 focus-visible:border-input",
             "placeholder:text-sm sm:placeholder:text-sm",
             "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
-            showWarning ? "rounded-b-2xl rounded-t-none" : "rounded-2xl",
+            hasWarningBanner ? "rounded-b-2xl rounded-t-none" : "rounded-2xl",
             disabled && "cursor-not-allowed opacity-60"
           )}
           value={value}
-          onKeyDown={onKeyDown}
           onChange={onChange}
           disabled={disabled}
         />

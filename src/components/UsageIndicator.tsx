@@ -124,7 +124,11 @@ export function UsageIndicator({
         <div className="space-y-1">
           <h3 className="text-sm font-semibold">Потребление за периода</h3>
           <p className="text-xs text-muted-foreground">
-            {formatPeriodDates(usage.periodStart, usage.periodEnd)}
+            {formatPeriodDates(
+              usage.periodStart,
+              usage.periodEnd,
+              usage.planKey
+            )}
           </p>
         </div>
         {showPlanBadge && (
@@ -271,7 +275,28 @@ function UsageIndicatorSkeleton({ variant }: { variant: Props["variant"] }) {
   );
 }
 
-function formatPeriodDates(periodStart: string, periodEnd: string): string {
+function formatPeriodDates(
+  periodStart: string,
+  periodEnd: string,
+  planKey: string
+): string {
+  // 1. For TRIAL plan, show remaining days instead of date range
+  if (planKey === "TRIAL") {
+    const now = new Date();
+    const endDate = new Date(periodEnd);
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 0) {
+      return "Пробният период е изтекъл";
+    } else if (diffDays === 1) {
+      return "Остава 1 ден от пробния период";
+    } else {
+      return `Остават ${diffDays} дни от пробния период`;
+    }
+  }
+
+  // 2. For other plans, show date range
   const startDate = new Date(periodStart);
   const endDate = new Date(periodEnd);
 

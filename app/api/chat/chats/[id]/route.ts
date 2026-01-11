@@ -18,20 +18,20 @@ export async function GET(
     const supabase = await createClient();
     const { id } = await params;
 
-    // 1. First, verify the conversation belongs to the user
-    const { data: conversation, error: convError } = await supabase
-      .from("conversations")
+    // 1. First, verify the chat belongs to the user
+    const { data: chat, error: convError } = await supabase
+      .from("chats")
       .select("id")
       .eq("id", id)
       .eq("user_id", user.userId)
       .single();
 
-    if (convError || !conversation) {
+    if (convError || !chat) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: "Conversation not found",
+            message: "Chat not found",
             code: "NOT_FOUND",
           },
         },
@@ -43,7 +43,7 @@ export async function GET(
     const { data, error } = await supabase
       .from("messages")
       .select("*")
-      .eq("conversation_id", id)
+      .eq("chat_id", id)
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -63,7 +63,7 @@ export async function GET(
     // 3. Transform to camelCase
     const messages = (data || []).map((msg) => ({
       id: msg.id,
-      conversationId: msg.conversation_id,
+      chatId: msg.chat_id,
       userId: msg.user_id,
       role: msg.role,
       content: msg.content,
@@ -134,7 +134,7 @@ export async function PATCH(
     }
 
     const { data, error } = await supabase
-      .from("conversations")
+      .from("chats")
       .update({ title })
       .eq("id", id)
       .eq("user_id", user.userId)
@@ -142,12 +142,12 @@ export async function PATCH(
       .single();
 
     if (error || !data) {
-      console.error("Error updating conversation:", error);
+      console.error("Error updating chat:", error);
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: "Failed to update conversation",
+            message: "Failed to update chat",
             code: "DATABASE_ERROR",
           },
         },
@@ -155,7 +155,7 @@ export async function PATCH(
       );
     }
 
-    const conversation = {
+    const chat = {
       id: data.id,
       userId: data.user_id,
       title: data.title,
@@ -165,7 +165,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      data: conversation,
+      data: chat,
     });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
@@ -210,18 +210,18 @@ export async function DELETE(
     const { id } = await params;
 
     const { error } = await supabase
-      .from("conversations")
+      .from("chats")
       .delete()
       .eq("id", id)
       .eq("user_id", user.userId);
 
     if (error) {
-      console.error("Error deleting conversation:", error);
+      console.error("Error deleting chat:", error);
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: "Failed to delete conversation",
+            message: "Failed to delete chat",
             code: "DATABASE_ERROR",
           },
         },
@@ -231,7 +231,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: "Conversation deleted successfully",
+      message: "Chat deleted successfully",
     });
   } catch (error) {
     if (error instanceof UnauthorizedError) {

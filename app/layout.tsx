@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 
 import "@/index.css";
 import { Toaster } from "@components/ui/sonner";
 import { Providers } from "./providers";
+
+const inter = Inter({
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "EVTA AI | Данъчен Асистент",
@@ -37,8 +44,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bg" suppressHydrationWarning>
-      <body>
+    <html lang="bg" suppressHydrationWarning className={inter.variable}>
+      <body className={inter.className}>
         <Providers>
           {children}
 

@@ -18,7 +18,7 @@ export interface ContextRetrievalResult {
   regulationsContext: string; // Relevant articles from ППЗДДС
 }
 
-export interface ConversationMessage {
+export interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
 }

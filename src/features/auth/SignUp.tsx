@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { CheckCircle2, Eye, EyeOff, Mail } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -10,8 +11,12 @@ import { z } from "zod";
 import { Link } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/browser";
 import { Button } from "@components/ui/button";
+import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
+import { Separator } from "@components/ui/separator";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ProductCard } from "./components/ProductCard";
+import { SignUpSuccess } from "./components/SignUpSuccess";
 
 const signUpSchema = z
   .object({
@@ -177,69 +182,53 @@ export default function SignUp() {
 
   if (showSuccess) {
     return (
-      <div className="flex h-screen items-center justify-center p-4 pl-4">
-        <div className="w-full max-w-lg">
-          <div className="rounded-2xl backdrop-blur-sm bg-white/90 p-10 md:p-12 shadow-xl border border-neutral-200">
-            <div className="text-center">
-              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold tracking-tight text-neutral-900 mb-4">
-                Проверете имейла си
-              </h2>
-              <p className="text-neutral-600 mb-2">
-                Изпратихме имейл за потвърждение на:
-              </p>
-              <p className="font-semibold text-neutral-900 mb-6">
-                {registeredEmail}
-              </p>
-              <p className="text-sm text-neutral-500 mb-8">
-                Кликнете на линка в имейла, за да потвърдите акаунта си и да
-                завършите регистрацията
-              </p>
-
-              {apiError && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="rounded-lg bg-red-50 p-3 text-sm text-red-600 mb-4"
-                >
-                  {apiError}
-                </motion.div>
-              )}
-
-              <div className="space-y-3">
-                <p className="text-sm text-neutral-600">Не получихте имейл?</p>
-                <Button
-                  onClick={handleResendEmail}
-                  disabled={resendCooldown > 0 || isResending}
-                  variant="outline"
-                  className="w-full h-11"
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  {isResending
-                    ? "Изпращане..."
-                    : resendCooldown > 0
-                    ? `Изпрати отново (${resendCooldown}s)`
-                    : "Изпрати отново"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <SignUpSuccess
+        registeredEmail={registeredEmail}
+        apiError={apiError}
+        resendCooldown={resendCooldown}
+        isResending={isResending}
+        onResendEmail={handleResendEmail}
+      />
     );
   }
 
   return (
-    <div className="flex h-screen items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        <div className="rounded-2xl backdrop-blur-sm bg-white/90 p-10 md:p-12 shadow-xl border border-neutral-200">
+    <div className="flex h-screen">
+      {/* Left-end side - Product Card */}
+      <div className="hidden lg:block lg:w-[40%] xl:w-[45%] p-6">
+        <div className="h-full w-full rounded-xl overflow-hidden">
+          <ProductCard />
+        </div>
+      </div>
+
+      {/* Right side - Form */}
+      <div className="flex flex-1 flex-col justify-center px-6 py-8 lg:px-16 xl:px-24 overflow-y-auto">
+        <div className="mx-auto w-full max-w-md">
+          {/* Brand Logo and Slogan */}
+          <div className="mb-6">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="relative h-24 w-24 flex-shrink-0">
+                <Image
+                  src="/brand-light.png"
+                  alt="EVTA AI Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+
+              <div className="h-8 w-px bg-neutral-300" />
+              <span className="text-sm font-semibold text-neutral-700">
+                Вашият данъчен партньор
+              </span>
+            </div>
+          </div>
+
           {/* Form Header */}
-          <div className="mb-6 text-center">
-            <h2 className="text-2xl font-bold tracking-tight text-neutral-900">
+          <div className="mb-5">
+            <h1 className="text-xl font-bold tracking-tight text-neutral-900">
               Създайте акаунт
-            </h2>
+            </h1>
             <p className="mt-2 text-sm text-neutral-600">
               Създайте вашия EVTA AI акаунт и започнете да получавате бързо и
               лесно данъчни консултации
@@ -248,28 +237,31 @@ export default function SignUp() {
 
           {/* Sign Up Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {apiError && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="rounded-lg bg-red-50 p-3 text-sm text-red-600"
-              >
-                {apiError}
-              </motion.div>
-            )}
+            <AnimatePresence mode="wait">
+              {apiError && (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="rounded-lg bg-red-50 p-3 text-sm text-red-600"
+                >
+                  {apiError}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Имейл адрес</Label>
-              <div className="relative">
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  autoComplete="email"
-                  className="h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  {...register("email")}
-                />
-              </div>
+              <Label htmlFor="email">Имейл</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
+                autoComplete="email"
+                className="h-12 w-full mt-1"
+                {...register("email")}
+              />
               {formState.errors.email && (
                 <p className="text-sm text-red-600">
                   {formState.errors.email.message}
@@ -279,19 +271,19 @@ export default function SignUp() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Парола</Label>
-              <div className="relative">
-                <input
+              <div className="relative mt-1">
+                <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="new-password"
-                  className="h-11 pr-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                  className="h-12 w-full mt-1"
                   {...register("password")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                   aria-label={showPassword ? "Скрий парола" : "Покажи парола"}
                 >
                   {showPassword ? (
@@ -321,7 +313,7 @@ export default function SignUp() {
                       />
                     ))}
                   </div>
-                  <div className="space-y-1 text-xs">
+                  <div className="grid grid-cols-2 gap-1 text-xs">
                     <div
                       className={
                         passwordStrength.hasMinLength
@@ -338,7 +330,7 @@ export default function SignUp() {
                           : "text-neutral-500"
                       }
                     >
-                      ✓ Една малка буква
+                      ✓ Малка буква
                     </div>
                     <div
                       className={
@@ -347,7 +339,7 @@ export default function SignUp() {
                           : "text-neutral-500"
                       }
                     >
-                      ✓ Една главна буква
+                      ✓ Главна буква
                     </div>
                     <div
                       className={
@@ -365,19 +357,19 @@ export default function SignUp() {
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Потвърдете паролата</Label>
-              <div className="relative">
-                <input
+              <div className="relative mt-1">
+                <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="new-password"
-                  className="h-11 pr-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                  className="h-12 w-full mt-1"
                   {...register("confirmPassword")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                   aria-label={
                     showConfirmPassword ? "Скрий парола" : "Покажи парола"
                   }
@@ -402,13 +394,13 @@ export default function SignUp() {
 
             <Button
               type="submit"
-              className="h-11 w-full"
+              className="h-12 w-full rounded-full text-base font-medium mt-4"
               disabled={isLoading || !formState.isValid || !passwordsMatch}
             >
               {isLoading ? "Създаване на акаунт..." : "Създай акаунт"}
             </Button>
 
-            <p className="text-center text-xs text-neutral-500 pt-2">
+            <p className="pt-2 text-center text-xs text-neutral-500">
               Продължавайки, вие се съгласявате с нашите{" "}
               <a href="/legal#tos" className="underline hover:text-neutral-700">
                 Общи условия
@@ -420,13 +412,14 @@ export default function SignUp() {
             </p>
           </form>
 
-          {/* Sign In Link */}
-          <div className="text-center mt-8 pt-6 border-t border-neutral-200">
-            <p className="text-sm text-neutral-600">
+          {/* Login Link */}
+          <div className="mt-5">
+            <Separator className="mb-4" />
+            <p className="text-center text-sm text-neutral-600">
               Вече имате акаунт?{" "}
               <Link
                 href="/auth/sign-in"
-                className="font-semibold text-neutral-900 hover:underline"
+                className="font-semibold text-primary hover:underline"
               >
                 Влезте
               </Link>

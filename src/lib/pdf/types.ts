@@ -1,10 +1,10 @@
-export interface ConversationExport {
-  metadata: ConversationExportMetadata;
+export interface ChatExport {
+  metadata: ChatExportMetadata;
   messages: MessageExport[];
 }
 
-export interface ConversationExportMetadata {
-  conversationId: string;
+export interface ChatExportMetadata {
+  chatId: string;
   title: string;
   exportedAt: string; // ISO 8601 string
   locale: string; // e.g., "bg-BG"

@@ -3,12 +3,12 @@ import "server-only";
 import { Content, GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 import { env } from "@/lib/env";
-import { SYSTEM_INSTRUCTION, buildAnalysisPrompt } from "./prompts";
-import type {
-  ConversationMessage,
-  QueryAnalysisResult,
-  TokenUsage,
-} from "./types";
+import {
+  SYSTEM_INSTRUCTION,
+  buildAnalysisPrompt,
+  buildTitlePrompt,
+} from "./prompts";
+import type { ChatMessage, QueryAnalysisResult, TokenUsage } from "./types";
 
 /**
  * Handles all interactions with Google Gemini AI for the Bulgarian VAT
@@ -31,12 +31,12 @@ class GeminiService {
   /**
    * Step 1: Analyze Query
    *
-   * Analyzes the user's question in the context of conversation history
+   * Analyzes the user's question in the context of chat history
    * to produce a refined question and search keywords
    */
   async analyzeQuery(
     currentQuestion: string,
-    conversationHistory: ConversationMessage[]
+    chatHistory: ChatMessage[]
   ): Promise<QueryAnalysisResult> {
     const startTime = Date.now();
     const modelName = "gemini-2.5-flash";
@@ -50,8 +50,8 @@ class GeminiService {
       step: "1 - Query Analysis",
     });
 
-    // 1. Format conversation history
-    const formattedHistory = conversationHistory
+    // 1. Format chat history
+    const formattedHistory = chatHistory
       .filter((msg) => msg.role !== "system") // Exclude system messages
       .map((msg) => {
         const label = msg.role === "user" ? "User" : "Assistant";
@@ -64,7 +64,7 @@ class GeminiService {
 
     console.log("📝 [LLM Input]", {
       currentQuestion,
-      historyLength: conversationHistory.length,
+      historyLength: chatHistory.length,
       promptLength: prompt.length,
     });
 
@@ -80,7 +80,7 @@ class GeminiService {
             refined_question: {
               type: SchemaType.STRING,
               description:
-                "The refined, more precise question in Bulgarian, considering the whole conversation.",
+                "The refined, more precise question in Bulgarian, considering the whole chat.",
             },
             search_keywords: {
               type: SchemaType.ARRAY,
@@ -178,20 +178,62 @@ class GeminiService {
   }
 
   /**
+   * Generates a concise title for a chat
+   */
+  async generateTitle(userMessage: string): Promise<string> {
+    const startTime = Date.now();
+    const modelName = "gemini-2.5-flash";
+
+    console.log("🤖 [LLM Call - Title Generation] Starting...");
+    console.log("📝 [Title Input]", { messageLength: userMessage.length });
+
+    const prompt = buildTitlePrompt(userMessage);
+
+    const model = this.genAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: {
+        temperature: 0.6,
+      },
+    });
+
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const rawText = response.text();
+
+    console.log("📄 [Raw Title Response]", { rawText });
+
+    const title = rawText
+      .trim()
+      .replace(/^["'„"«»\s]+|["'„"«»\s]+$/g, "") // Remove quotes
+      .replace(/\n/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const duration = Date.now() - startTime;
+    console.log("✅ [LLM Response - Title Generation]", {
+      title,
+      length: title.length,
+      duration: `${duration}ms`,
+    });
+
+    return title;
+  }
+
+  /**
    * Step 3: Generate Streaming Response
    *
    * Generates a comprehensive legal answer using the retrieved context
-   * and conversation history. Streams the response in real-time
+   * and chat history. Streams the response in real-time
    */
   async *generateResponseStream(
-    conversationHistory: ConversationMessage[],
+    chatHistory: ChatMessage[],
     finalPrompt: string
   ): AsyncGenerator<{ text?: string; usage?: TokenUsage; done: boolean }> {
     const startTime = Date.now();
     const modelName = "gemini-2.5-flash";
-    const temperature = 0.2;
-    const topK = 20;
-    const topP = 0.8;
+    const temperature = 0;
+    const topK = 1;
+    const topP = 1;
 
     console.log("🤖 [LLM Call - Response Generation] Starting...");
     console.log("📊 [LLM Config]", {
@@ -203,8 +245,8 @@ class GeminiService {
       systemInstruction: "SYSTEM_INSTRUCTION (Bulgarian VAT Expert)",
     });
 
-    // 1. Convert conversation history to Gemini Content format
-    const contents: Content[] = conversationHistory.map((msg) => ({
+    // 1. Convert chat history to Gemini Content format
+    const contents: Content[] = chatHistory.map((msg) => ({
       role: msg.role === "assistant" ? "model" : "user",
       parts: [{ text: msg.content }],
     }));
@@ -216,7 +258,7 @@ class GeminiService {
     });
 
     console.log("📝 [LLM Input]", {
-      historyLength: conversationHistory.length,
+      historyLength: chatHistory.length,
       finalPromptLength: finalPrompt.length,
       totalMessages: contents.length,
     });

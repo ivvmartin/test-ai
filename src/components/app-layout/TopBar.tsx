@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { animations } from "@/lib/motion";
 import { useLocation, useNavigate } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@components/ui/tooltip";
 import { useAuthStore } from "@store/auth.store";
-import { useConversationsQuery } from "@utils/chat-queries";
+import { useChatsQuery } from "@utils/chat-queries";
 import { queryClient } from "@utils/queries";
 import { useUsageSnapshot, useUserIdentity } from "@utils/usage-queries";
 import {
@@ -34,7 +35,7 @@ export function TopBar() {
   const { data: userIdentity, isLoading: isLoadingUserIdentity } =
     useUserIdentity();
   const { data: usage, isLoading: isLoadingUsage } = useUsageSnapshot();
-  const { data: conversations = [] } = useConversationsQuery();
+  const { data: chats = [] } = useChatsQuery();
   const { open, isMobile } = useSidebar();
 
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -44,18 +45,16 @@ export function TopBar() {
     useState<LegalTopic>("ДДС");
   const isScrolled = useScrollDetection(20);
 
-  const conversationId = location.pathname.startsWith("/app/chat/")
+  const chatId = location.pathname.startsWith("/app/chat/")
     ? location.pathname.split("/app/chat/")[1]
     : null;
 
-  const currentConversation = conversationId
-    ? conversations.find((c) => c.id === conversationId)
-    : null;
+  const currentChat = chatId ? chats.find((c) => c.id === chatId) : null;
 
   const getPageTitle = () => {
     if (location.pathname.startsWith("/app/chat")) {
-      if (currentConversation?.title) {
-        return currentConversation.title;
+      if (currentChat?.title) {
+        return currentChat.title;
       }
       return "Начало";
     }
@@ -79,12 +78,13 @@ export function TopBar() {
       clearAuth();
       queryClient.clear();
       navigate("/auth/sign-in");
+      toast.success("Излязохте успешно");
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error("Възникна неочаквана грешка");
       clearAuth();
       queryClient.clear();
       navigate("/auth/sign-in");
+      toast.error("Възникна неочаквана грешка");
     }
   };
 
@@ -96,15 +96,13 @@ export function TopBar() {
           ? "left-0 right-0"
           : open
           ? "left-[var(--sidebar-width)] right-0"
-          : "left-0 right-0",
-        isScrolled && "px-6 md:px-12"
+          : "left-0 right-0"
       )}
     >
       <header
         className={cn(
-          "bg-background mx-auto flex items-center justify-between border-b px-2 md:px-6 overflow-x-auto transition-all duration-500 ease-in-out will-change-[background-color,max-width,border-radius,box-shadow,margin-top] h-14",
-          isScrolled &&
-            "bg-background/70 max-w-10xl rounded-xl border backdrop-blur-sm shadow-md mt-1"
+          "bg-background mx-auto flex items-center justify-between px-2 md:px-6 overflow-x-auto transition-[background-color] duration-500 ease-in-out h-14",
+          isScrolled && "bg-background/70 backdrop-blur-sm border-b"
         )}
       >
         <div className="flex items-center gap-1.5 md:gap-2 min-w-0">
@@ -121,11 +119,10 @@ export function TopBar() {
           <Separator orientation="vertical" className="h-6 flex-shrink-0" />
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center"
+            {...animations.fadeInDown}
+            className="flex items-center min-w-0 flex-1"
           >
-            {location.pathname === "/app/chat" && !currentConversation ? (
+            {location.pathname === "/app/chat" && !currentChat ? (
               <LegalTopicSelector
                 selectedTopic={selectedLegalTopic}
                 onTopicChange={setSelectedLegalTopic}
@@ -133,7 +130,9 @@ export function TopBar() {
                 onOpenChange={setIsLegalTopicSelectorOpen}
               />
             ) : (
-              <h1 className="text-sm font-medium truncate">{getPageTitle()}</h1>
+              <h1 className="text-sm md:text-[15px] font-medium truncate max-w-[300px] md:max-w-[500px]">
+                {getPageTitle()}
+              </h1>
             )}
           </motion.div>
         </div>
@@ -149,7 +148,6 @@ export function TopBar() {
             onNavigateTerms={() => navigate("/legal#tos")}
             onNavigatePrivacy={() => navigate("/legal#pp")}
             onLogout={handleLogout}
-            isScrolled={isScrolled}
             isLoading={isLoadingUserIdentity || isLoadingUsage}
           />
         </div>

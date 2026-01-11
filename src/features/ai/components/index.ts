@@ -1,5 +1,4 @@
 export { AiInput } from "./AiInput";
-export { ChatNotFound } from "./ChatNotFound";
-export { ChatWelcome } from "./ChatWelcome";
+export { ChatInputArea } from "./ChatInputArea";
+export { ChatMessages } from "./ChatMessages";
 export { MessageItem } from "./MessageItem";
-

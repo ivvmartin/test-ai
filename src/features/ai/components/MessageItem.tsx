@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 import { Bot, Copy } from "lucide-react";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { toast } from "sonner";
 
+import { generateUserAvatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/types/chat.types";
 import { MarkdownContent } from "@components/MarkdownContent";
-import { Avatar, AvatarFallback } from "@components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
 import { BouncingDots } from "@components/ui/bouncing-dots";
 
 interface MessageItemProps {
@@ -16,6 +17,11 @@ interface MessageItemProps {
 
 export const MessageItem = memo(
   ({ message, userEmail }: MessageItemProps) => {
+    const avatarUrl = useMemo(
+      () => (userEmail ? generateUserAvatar(userEmail) : null),
+      [userEmail]
+    );
+
     if (message.role === "user") {
       return (
         <motion.div
@@ -24,15 +30,12 @@ export const MessageItem = memo(
           transition={{ duration: 0.05 }}
           className="flex flex-row gap-3 px-1 py-2 sm:gap-4 sm:px-2"
         >
-          <div className="bg-muted flex size-8 shrink-0 items-center justify-center rounded-full">
-            <span className="font-medium text-foreground text-sm">
-              <Avatar className="size-8">
-                <AvatarFallback className="bg-muted rounded-2xl text-xs flex items-center justify-center">
-                  {userEmail?.replace(/@.*$/, "")[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </span>
-          </div>
+          <Avatar className="size-8 shrink-0">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt="User avatar" />}
+            <AvatarFallback className="bg-muted rounded-full text-xs flex items-center justify-center">
+              {userEmail?.replace(/@.*$/, "")[0].toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex min-w-0 flex-1 items-center">
             <p className="text-foreground break-words text-[0.9rem] leading-relaxed">
               {message.content}
@@ -84,7 +87,6 @@ export const MessageItem = memo(
   },
   (prevProps, nextProps) => {
     // Only re-render if content or role changes
-    // Don't compare ID to prevent flash when temp ID changes to real ID
     return (
       prevProps.message.role === nextProps.message.role &&
       prevProps.message.content === nextProps.message.content &&

@@ -17,7 +17,7 @@ export const usageKeys = {
 interface BillingPlanApiResponse {
   success: true;
   data: {
-    plan: "FREE" | "PAID" | "INTERNAL";
+    plan: "TRIAL" | "PAID" | "FREE_INTERNAL" | "INTERNAL";
     monthlyLimit: number;
     balance: number; // Remaining messages
     periodStart: string; // ISO 8601
@@ -107,6 +107,7 @@ export interface UserIdentity {
   userId: string;
   email: string;
   plan: PlanKey;
+  createdAt?: string;
 }
 
 interface UserIdentityApiResponse {

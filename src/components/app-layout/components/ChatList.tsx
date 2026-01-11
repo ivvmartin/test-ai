@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { Download, MessageSquare, MoreHorizontal, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
-import type { Conversation } from "@/types/chat.types";
+import type { Chat } from "@/types/chat.types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,26 +14,48 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@components/ui/sidebar";
+import TypewriterText from "@components/ui/text-typewriter";
 
-interface ConversationListProps {
-  conversations: Conversation[];
+interface ChatListProps {
+  chats: Chat[];
   isLoading: boolean;
-  activeConversationId: string | null;
-  onConversationClick: (id: string) => void;
+  activeChatId: string | null;
+  onChatClick: (id: string) => void;
   onExport: (id: string, e?: React.MouseEvent) => void;
   onDelete: (id: string, e?: React.MouseEvent) => void;
   isDeleting: boolean;
 }
 
-export function ConversationList({
-  conversations,
+export function ChatList({
+  chats,
   isLoading,
-  activeConversationId,
-  onConversationClick,
+  activeChatId,
+  onChatClick,
   onExport,
   onDelete,
   isDeleting,
-}: ConversationListProps) {
+}: ChatListProps) {
+  const [typewritingChatId, setTypewritingChatId] = useState<string | null>(
+    null
+  );
+  const previousChatsRef = useRef<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    chats.forEach((chat) => {
+      const previousTitle = previousChatsRef.current.get(chat.id);
+      const currentTitle = chat.title || "Нов казус";
+
+      if (previousTitle === "Нов казус" && currentTitle !== "Нов казус") {
+        setTypewritingChatId(chat.id);
+        setTimeout(() => {
+          setTypewritingChatId(null);
+        }, currentTitle.length * 50 + 500);
+      }
+
+      previousChatsRef.current.set(chat.id, currentTitle);
+    });
+  }, [chats]);
+
   if (isLoading) {
     return (
       <motion.div
@@ -50,7 +73,7 @@ export function ConversationList({
     );
   }
 
-  if (conversations.length === 0) {
+  if (chats.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -64,24 +87,28 @@ export function ConversationList({
 
   return (
     <SidebarMenu>
-      {conversations.map((conversation) => (
-        <div key={conversation.id}>
-          <SidebarMenuItem className="group/conversation-item">
+      {chats.map((chat) => (
+        <div key={chat.id}>
+          <SidebarMenuItem className="group/chat-item">
             <div className="relative flex w-full items-center gap-1">
               <SidebarMenuButton
-                isActive={activeConversationId === conversation.id}
-                onClick={() => onConversationClick(conversation.id)}
+                isActive={activeChatId === chat.id}
+                onClick={() => onChatClick(chat.id)}
                 className="flex-1 min-w-0 pr-8"
               >
                 <MessageSquare className="size-4 shrink-0" />
                 <span className="truncate block overflow-hidden text-ellipsis whitespace-nowrap">
-                  {conversation.title || "Нов казус"}
+                  {typewritingChatId === chat.id ? (
+                    <TypewriterText>{chat.title || "Нов казус"}</TypewriterText>
+                  ) : (
+                    chat.title || "Нов казус"
+                  )}
                 </span>
               </SidebarMenuButton>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="absolute right-1 flex size-7 shrink-0 items-center justify-center rounded-md opacity-0 outline-none transition-opacity hover:bg-accent hover:opacity-100 focus-visible:opacity-100 group-hover/conversation-item:opacity-100 data-[state=open]:bg-accent data-[state=open]:opacity-100"
+                    className="absolute right-1 flex size-7 shrink-0 items-center justify-center rounded-md opacity-100 outline-none transition-opacity hover:bg-accent focus-visible:opacity-100 data-[state=open]:bg-accent data-[state=open]:opacity-100 md:opacity-0 md:group-hover/chat-item:opacity-100 md:hover:opacity-100"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <MoreHorizontal className="size-4" />
@@ -96,7 +123,7 @@ export function ConversationList({
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();
-                      onExport(conversation.id, e);
+                      onExport(chat.id, e);
                     }}
                   >
                     <Download className="mr-2 size-4" />
@@ -106,7 +133,7 @@ export function ConversationList({
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDelete(conversation.id, e);
+                      onDelete(chat.id, e);
                     }}
                     disabled={isDeleting}
                     className="text-destructive focus:bg-destructive/10 focus:text-destructive"

@@ -1,15 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  CheckCircle,
-  CreditCard,
-  Crown,
-  ExternalLink,
-  Sparkles,
-} from "lucide-react";
+import { CreditCard, Crown, ExternalLink, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
+import { PlansDialog } from "@components/PlansDialog";
 import { Button } from "@components/ui/button";
 import { Skeleton } from "@components/ui/skeleton";
 import { UsageIndicator } from "@components/UsageIndicator";
@@ -20,12 +16,18 @@ import {
 import { useUsageSnapshot } from "@utils/usage-queries";
 
 export function BillingPage() {
+  const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+
   const { data: usage, isLoading: isLoadingPlan } = useUsageSnapshot();
 
   const checkoutMutation = useCreateCheckoutSession();
   const portalMutation = useCreatePortalSession();
 
-  const handleUpgrade = () => {
+  const handleOpenPlansDialog = () => {
+    setPlansDialogOpen(true);
+  };
+
+  const handleSelectPremium = () => {
     checkoutMutation.mutate("PREMIUM", {
       onError: (error) => {
         toast.error(
@@ -51,6 +53,22 @@ export function BillingPage() {
 
   const isPremium = usage?.planKey === "PAID";
 
+  const getPlanDisplayName = () => {
+    if (!usage) return "";
+    switch (usage.planKey) {
+      case "TRIAL":
+        return "Пробен план";
+      case "PAID":
+        return "Premium план";
+      case "FREE_INTERNAL":
+        return "Безплатен план";
+      case "INTERNAL":
+        return "Служебен план";
+      default:
+        return "Неизвестен план";
+    }
+  };
+
   return (
     <div className="mx-auto max-w-3xl p-4 md:p-6 lg:p-8">
       <motion.div
@@ -60,117 +78,102 @@ export function BillingPage() {
       >
         {/* Header */}
         <div>
-          <h1 className="font-bold text-lg md:text-xl tracking-tight">
+          <h1 className="font-bold text-xl tracking-tight">
             Абонамент и плащане
           </h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-[15px] mt-1">
             Управлявайте вашия абонамент и методи на плащане
           </p>
         </div>
 
-        {/* Plan Status */}
-        <div className="space-y-4 mt-8 md:mt-14">
-          <div className="flex flex-wrap items-center gap-2 md:gap-3">
-            <h3 className="font-semibold text-sm md:text-base">Абонамент</h3>
+        {/* Plan Status - Hidden for INTERNAL plan */}
+        {usage?.planKey !== "INTERNAL" && (
+          <div className="space-y-4 mt-8 md:mt-14">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
+              <h3 className="font-semibold text-base">Активен абонамент</h3>
+            </div>
 
             {isLoadingPlan ? (
-              <Skeleton className="h-6 w-32" />
-            ) : usage && isPremium ? (
-              <div className="flex items-center gap-1.5 md:gap-2">
-                <CheckCircle className="size-4 md:size-5 text-green-700" />
-                <span className="text-xs md:text-sm font-medium text-green-700">
-                  Активен
-                </span>
+              <div className="rounded-lg border bg-card p-4 md:p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-4 w-48" />
+                    </div>
+                    <Skeleton className="h-10 w-32" />
+                  </div>
+                </div>
+              </div>
+            ) : usage ? (
+              <div className="rounded-lg border bg-card p-4 md:p-6">
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center gap-2.5 md:gap-3">
+                      {isPremium ? (
+                        <div className="flex size-10 md:size-12 items-center justify-center rounded-lg bg-gray-100 flex-shrink-0">
+                          <Crown className="size-5 md:size-6 text-[#21355a]" />
+                        </div>
+                      ) : (
+                        <div className="flex size-10 md:size-12 items-center justify-center rounded-lg bg-gray-100 flex-shrink-0">
+                          <Sparkles className="size-5 md:size-6 text-gray-600" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm md:text-base">
+                          {getPlanDisplayName()}
+                        </p>
+                        <p className="text-xs md:text-sm text-muted-foreground">
+                          {usage.planKey === "TRIAL"
+                            ? `${usage.monthlyLimit} съобщения за 7 дни`
+                            : `${usage.monthlyLimit} съобщения на месец`}
+                        </p>
+                      </div>
+                    </div>
+                    {isPremium ? (
+                      <Button
+                        onClick={handleManageSubscription}
+                        disabled={portalMutation.isPending}
+                        variant="outline"
+                        className="gap-1.5 md:gap-2 text-xs md:text-sm w-full sm:w-auto"
+                        size="sm"
+                      >
+                        {portalMutation.isPending ? (
+                          <>
+                            <span className="size-3 md:size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            <span className="hidden sm:inline">
+                              Отваряне...
+                            </span>
+                            <span className="sm:hidden">Зареждане...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="size-3 md:size-4" />
+                            <span className="hidden md:inline">
+                              Управление на абонамента
+                            </span>
+                            <span className="md:hidden">Управление</span>
+                            <ExternalLink className="size-3" />
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleOpenPlansDialog}
+                        size="sm"
+                        variant="secondary"
+                        className="gap-1.5 md:gap-2 text-xs md:text-sm w-full sm:w-auto"
+                      >
+                        <Crown className="size-3 md:size-4" />
+                        Надградете до Premium
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             ) : null}
           </div>
-
-          {isLoadingPlan ? (
-            <div className="rounded-lg border bg-card p-4 md:p-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <Skeleton className="h-6 w-32" />
-                    <Skeleton className="h-4 w-48" />
-                  </div>
-                  <Skeleton className="h-10 w-32" />
-                </div>
-              </div>
-            </div>
-          ) : usage ? (
-            <div className="rounded-lg border bg-card p-4 md:p-6">
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex items-center gap-2.5 md:gap-3">
-                    {isPremium ? (
-                      <div className="flex size-10 md:size-12 items-center justify-center rounded-lg bg-gray-100 flex-shrink-0">
-                        <Crown className="size-5 md:size-6 text-[#21355a]" />
-                      </div>
-                    ) : (
-                      <div className="flex size-10 md:size-12 items-center justify-center rounded-lg bg-gray-100 flex-shrink-0">
-                        <Sparkles className="size-5 md:size-6 text-gray-600" />
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm md:text-base">
-                        {isPremium ? "Premium план" : "Безплатен план"}
-                      </p>
-                      <p className="text-xs md:text-sm text-muted-foreground">
-                        {usage.monthlyLimit} съобщения на месец
-                      </p>
-                    </div>
-                  </div>
-                  {isPremium ? (
-                    <Button
-                      onClick={handleManageSubscription}
-                      disabled={portalMutation.isPending}
-                      variant="outline"
-                      className="gap-1.5 md:gap-2 text-xs md:text-sm w-full sm:w-auto"
-                      size="sm"
-                    >
-                      {portalMutation.isPending ? (
-                        <>
-                          <span className="size-3 md:size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          <span className="hidden sm:inline">Отваряне...</span>
-                          <span className="sm:hidden">Зареждане...</span>
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="size-3 md:size-4" />
-                          <span className="hidden md:inline">
-                            Управление на абонамента
-                          </span>
-                          <span className="md:hidden">Управление</span>
-                          <ExternalLink className="size-3" />
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleUpgrade}
-                      disabled={checkoutMutation.isPending}
-                      size="sm"
-                      variant="secondary"
-                      className="gap-1.5 md:gap-2 text-xs md:text-sm w-full sm:w-auto"
-                    >
-                      {checkoutMutation.isPending ? (
-                        <>
-                          <span className="size-3 md:size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          Пренасочване...
-                        </>
-                      ) : (
-                        <>
-                          <Crown className="size-3 md:size-4" />
-                          Надградете до Premium
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
+        )}
 
         {/* Current Usage */}
         <div className="space-y-4">
@@ -187,6 +190,13 @@ export function BillingPage() {
           </motion.div>
         </div>
       </motion.div>
+
+      <PlansDialog
+        open={plansDialogOpen}
+        onOpenChange={setPlansDialogOpen}
+        onSelectPremium={handleSelectPremium}
+        isPending={checkoutMutation.isPending}
+      />
     </div>
   );
 }

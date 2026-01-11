@@ -5,15 +5,15 @@ import { requireUser } from "@/lib/auth/requireUser";
 import {
   EXPORT_LIMITS,
   generatePDF,
-  type ConversationExport,
+  type ChatExport,
   type MessageExport,
 } from "@/lib/pdf";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * POST /api/chat/conversations/[id]/export/pdf
+ * POST /api/chat/chats/[id]/export/pdf
  *
- * Exports a conversation to PDF format
+ * Exports a chat to PDF format
  */
 export async function POST(
   _request: NextRequest,
@@ -23,22 +23,22 @@ export async function POST(
     // 1. Authenticate user
     const user = await requireUser();
     const supabase = await createClient();
-    const { id: conversationId } = await params;
+    const { id: chatId } = await params;
 
-    // 2. Verify conversation belongs to user
-    const { data: conversation, error: convError } = await supabase
-      .from("conversations")
+    // 2. Verify chat belongs to user
+    const { data: chat, error: convError } = await supabase
+      .from("chats")
       .select("id, title, created_at")
-      .eq("id", conversationId)
+      .eq("id", chatId)
       .eq("user_id", user.userId)
       .single();
 
-    if (convError || !conversation) {
+    if (convError || !chat) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: "Conversation not found",
+            message: "Chat not found",
             code: "NOT_FOUND",
           },
         },
@@ -50,7 +50,7 @@ export async function POST(
     const { data: messages, error: messagesError } = await supabase
       .from("messages")
       .select("role, content, created_at")
-      .eq("conversation_id", conversationId)
+      .eq("chat_id", chatId)
       .order("created_at", { ascending: true });
 
     if (messagesError) {
@@ -59,7 +59,7 @@ export async function POST(
         {
           success: false,
           error: {
-            message: "Failed to fetch conversation messages",
+            message: "Failed to fetch chat messages",
             code: "DATABASE_ERROR",
           },
         },
@@ -86,7 +86,7 @@ export async function POST(
         {
           success: false,
           error: {
-            message: `Conversation has too many messages (${messages.length}). Maximum allowed: ${EXPORT_LIMITS.MAX_MESSAGES}`,
+            message: `Chat has too many messages (${messages.length}). Maximum allowed: ${EXPORT_LIMITS.MAX_MESSAGES}`,
             code: "PAYLOAD_TOO_LARGE",
           },
         },
@@ -104,7 +104,7 @@ export async function POST(
         {
           success: false,
           error: {
-            message: `Conversation content is too large (${totalChars} characters). Maximum allowed: ${EXPORT_LIMITS.MAX_TOTAL_CHARS}`,
+            message: `Chat content is too large (${totalChars} characters). Maximum allowed: ${EXPORT_LIMITS.MAX_TOTAL_CHARS}`,
             code: "PAYLOAD_TOO_LARGE",
           },
         },
@@ -113,10 +113,10 @@ export async function POST(
     }
 
     // 5. Build export data
-    const exportData: ConversationExport = {
+    const exportData: ChatExport = {
       metadata: {
-        conversationId: conversation.id,
-        title: conversation.title || "Нов казус",
+        chatId: chat.id,
+        title: chat.title || "Нов казус",
         exportedAt: new Date().toISOString(),
         locale: "bg-BG",
       },
@@ -149,7 +149,7 @@ export async function POST(
 
     // 8. Generate filename
     const dateStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-    const filename = `case-${conversationId.substring(0, 8)}-${dateStr}.pdf`;
+    const filename = `case-${chatId.substring(0, 8)}-${dateStr}.pdf`;
 
     // 9. Return PDF as downloadable file
     return new NextResponse(new Uint8Array(pdfBuffer), {

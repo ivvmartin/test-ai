@@ -1,19 +1,18 @@
 import { NextRequest } from "next/server";
 
-import type { ConversationMessage } from "@/lib/ai";
+import type { ChatMessage } from "@/lib/ai";
 import { buildFinalPrompt, geminiService, vatContentService } from "@/lib/ai";
-import { generateConversationTitle } from "@/lib/ai/title-generator";
 import { UnauthorizedError } from "@/lib/auth/errors";
 import { requireUser } from "@/lib/auth/requireUser";
-import { createClient } from "@/lib/supabase/server";
-import { LimitExceededError, usageService } from "@/lib/usage";
 import { guardrailService, JailbreakAttemptError } from "@/lib/guardrail";
 import {
-  rateLimiter,
-  RATE_LIMITS,
   getClientIp,
+  RATE_LIMITS,
+  rateLimiter,
   sanitizeUserInput,
 } from "@/lib/security";
+import { createClient } from "@/lib/supabase/server";
+import { LimitExceededError, usageService } from "@/lib/usage";
 
 /**
  * POST /api/chat/chats/[id]/messages
@@ -44,7 +43,7 @@ export async function POST(
   try {
     const user = await requireUser();
     const supabase = await createClient();
-    const { id: conversationId } = await params;
+    const { id: chatId } = await params;
 
     // Extract IP address securely for rate limiting and logging
     const clientIp = getClientIp(request);
@@ -115,8 +114,7 @@ export async function POST(
 
     const userMessage = sanitizationResult.sanitized;
 
-    // STEP 0: Guardrail Validation
-    // Check for jailbreak/malicious attempts BEFORE any processing
+    // 0. Guardrail Validation
     let isGuardrailBlocked = false;
     try {
       // Use the securely extracted IP address
@@ -132,19 +130,19 @@ export async function POST(
       }
     }
 
-    // 1. Verify conversation belongs to user
-    const { data: conversation, error: convError } = await supabase
-      .from("conversations")
+    // 1. Verify chat belongs to user
+    const { data: chat, error: convError } = await supabase
+      .from("chats")
       .select("id")
-      .eq("id", conversationId)
+      .eq("id", chatId)
       .eq("user_id", user.userId)
       .single();
 
-    if (convError || !conversation) {
+    if (convError || !chat) {
       return new Response(
         JSON.stringify({
           type: "error",
-          message: "Conversation not found",
+          message: "Chat not found",
         }),
         {
           status: 404,
@@ -172,19 +170,19 @@ export async function POST(
       throw error;
     }
 
-    // 3. Fetch conversation history
+    // 3. Fetch chat history
     const { data: messagesData, error: messagesError } = await supabase
       .from("messages")
       .select("*")
-      .eq("conversation_id", conversationId)
+      .eq("chat_id", chatId)
       .order("created_at", { ascending: true });
 
     if (messagesError) {
-      console.error("Error fetching conversation history:", messagesError);
+      console.error("Error fetching chat history:", messagesError);
       return new Response(
         JSON.stringify({
           type: "error",
-          message: "Failed to fetch conversation history",
+          message: "Failed to fetch chat history",
         }),
         {
           status: 500,
@@ -193,17 +191,15 @@ export async function POST(
       );
     }
 
-    // 4. Convert to ConversationMessage format
-    const conversationHistory: ConversationMessage[] = (messagesData || []).map(
-      (msg) => ({
-        role: msg.role as "user" | "assistant" | "system",
-        content: msg.content,
-      })
-    );
+    // 4. Convert to ChatMessage format
+    const chatHistory: ChatMessage[] = (messagesData || []).map((msg) => ({
+      role: msg.role as "user" | "assistant" | "system",
+      content: msg.content,
+    }));
 
     // 5. Save user message to database
     const { error: userMsgError } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
+      chat_id: chatId,
       user_id: user.userId,
       role: "user",
       content: userMessage,
@@ -223,14 +219,21 @@ export async function POST(
       );
     }
 
-    // 6. Auto-generate title if this is the first message
-    if (conversationHistory.length === 0) {
-      const title = generateConversationTitle(userMessage);
-      await supabase
-        .from("conversations")
-        .update({ title })
-        .eq("id", conversationId)
-        .eq("user_id", user.userId);
+    // 6. Generate AI title if this is the first message (non-blocking)
+    if (chatHistory.length === 0) {
+      geminiService
+        .generateTitle(userMessage)
+        .then(async (title) => {
+          await supabase
+            .from("chats")
+            .update({ title })
+            .eq("id", chatId)
+            .eq("user_id", user.userId);
+          console.log("✅ [API] AI-generated title saved:", title);
+        })
+        .catch((error) => {
+          console.error("❌ [API] Failed to generate AI title:", error);
+        });
     }
 
     // 7. Create streaming response
@@ -249,7 +252,7 @@ export async function POST(
 
             // Save the error message as assistant response
             await supabase.from("messages").insert({
-              conversation_id: conversationId,
+              chat_id: chatId,
               user_id: user.userId,
               role: "assistant",
               content: errorMessage,
@@ -280,7 +283,7 @@ export async function POST(
           );
           const analysisResult = await geminiService.analyzeQuery(
             userMessage,
-            conversationHistory
+            chatHistory
           );
 
           console.log("📋 [API] Analysis complete:", {
@@ -311,10 +314,10 @@ export async function POST(
           let fullResponse = "";
           let tokenUsage = null;
 
-          // Pass conversationHistory without the current message
+          // Pass chatHistory without the current message
           // The service will add finalPrompt as the new user message
           for await (const chunk of geminiService.generateResponseStream(
-            conversationHistory,
+            chatHistory,
             finalPrompt
           )) {
             if (chunk.text) {
@@ -336,7 +339,7 @@ export async function POST(
 
           // 8. Save assistant response to database
           await supabase.from("messages").insert({
-            conversation_id: conversationId,
+            chat_id: chatId,
             user_id: user.userId,
             role: "assistant",
             content: fullResponse,
@@ -368,7 +371,7 @@ export async function POST(
 
           // 11. Save error message to database so it persists
           await supabase.from("messages").insert({
-            conversation_id: conversationId,
+            chat_id: chatId,
             user_id: user.userId,
             role: "assistant",
             content: "Something went wrong. Please try again",
@@ -409,7 +412,7 @@ export async function POST(
     }
 
     console.error(
-      "Unexpected error in POST /api/chat/conversations/[id]/messages:",
+      "Unexpected error in POST /api/chat/chats/[id]/messages:",
       error
     );
     return new Response(

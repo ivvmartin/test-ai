@@ -8,21 +8,21 @@ import {
   DialogTitle,
 } from "@components/ui/dialog";
 
-interface DeleteConversationDialogProps {
+interface DeleteChatDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  conversationTitle: string | null;
+  chatTitle: string | null;
   onConfirm: () => void;
   isPending: boolean;
 }
 
-export function DeleteConversationDialog({
+export function DeleteChatDialog({
   open,
   onOpenChange,
-  conversationTitle,
+  chatTitle,
   onConfirm,
   isPending,
-}: DeleteConversationDialogProps) {
+}: DeleteChatDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -30,7 +30,7 @@ export function DeleteConversationDialog({
           <DialogTitle>Изтриване на казус</DialogTitle>
           <DialogDescription>
             Сигурни ли сте, че искате да изтриете казуса &quot;
-            {conversationTitle}
+            {chatTitle}
             &quot;? Това действие не може да бъде отменено
           </DialogDescription>
         </DialogHeader>

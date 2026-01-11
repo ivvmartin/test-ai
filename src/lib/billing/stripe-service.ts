@@ -123,6 +123,38 @@ export class StripeBillingService {
   }
 
   /**
+   * Cancel Subscription
+   *
+   * Cancels a Stripe subscription immediately
+   */
+  async cancelSubscription(
+    subscriptionId: string
+  ): Promise<Stripe.Subscription> {
+    try {
+      return await this.stripe.subscriptions.cancel(subscriptionId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      throw new BillingError(`Failed to cancel subscription: ${message}`);
+    }
+  }
+
+  /**
+   * Retrieve Subscription
+   *
+   * Retrieves a Stripe subscription by ID
+   */
+  async retrieveSubscription(
+    subscriptionId: string
+  ): Promise<Stripe.Subscription> {
+    try {
+      return await this.stripe.subscriptions.retrieve(subscriptionId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      throw new BillingError(`Failed to retrieve subscription: ${message}`);
+    }
+  }
+
+  /**
    * Verify Webhook Signature
    *
    * Verifies that a webhook event came from Stripe

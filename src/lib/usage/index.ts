@@ -14,4 +14,4 @@ export type {
   ConsumeUsageMeta,
   PeriodInfo,
 } from "./types";
-export { PLANS, getPeriodInfo } from "./types";
+export { PLANS, getPeriodInfo, getTrialPeriodInfo } from "./types";

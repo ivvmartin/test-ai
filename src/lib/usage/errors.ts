@@ -12,7 +12,7 @@ export class LimitExceededError extends Error {
     message: string = "Monthly usage limit has been reached. Upgrade your plan or wait for the next billing period.",
     public readonly used: number = 0,
     public readonly limit: number = 0,
-    public readonly planKey: string = "FREE"
+    public readonly planKey: string = "TRIAL"
   ) {
     super(message);
     this.name = "LimitExceededError";

@@ -5,13 +5,17 @@ import { createClient } from "@/lib/supabase/browser";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@components/ui/button";
+import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
+import { Separator } from "@components/ui/separator";
+import { ProductCard } from "./components/ProductCard";
 
 const signInSchema = z.object({
   email: z
@@ -86,8 +90,6 @@ export default function SignIn() {
         return;
       }
 
-      // Success - Supabase automatically sets cookies
-      // The auth store will be updated via the onAuthStateChange listener
       reset();
       navigate("/app/chat");
     } catch (error) {
@@ -99,14 +101,42 @@ export default function SignIn() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center p-4 pl-4">
-      <div className="w-full max-w-lg">
-        <div className="rounded-2xl backdrop-blur-sm bg-white/90 p-10 md:p-12 shadow-xl border border-neutral-200">
+    <div className="flex h-screen">
+      {/* Left-end side - Product Card */}
+      <div className="hidden lg:block lg:w-[40%] xl:w-[45%] p-6">
+        <div className="h-full w-full rounded-xl overflow-hidden">
+          <ProductCard />
+        </div>
+      </div>
+
+      {/* Right side - Form */}
+      <div className="flex w-full flex-col justify-center px-6 py-8 lg:w-[60%] lg:px-16 xl:w-[55%] xl:px-24">
+        <div className="mx-auto w-full max-w-md">
+          {/* Brand Logo and Slogan */}
+          <div className="mb-6">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="relative h-24 w-24 flex-shrink-0">
+                <Image
+                  src="/brand-light.png"
+                  alt="EVTA AI Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+
+              <div className="h-8 w-px bg-neutral-300" />
+              <span className="text-sm font-semibold text-neutral-700">
+                Вашият данъчен партньор
+              </span>
+            </div>
+          </div>
+
           {/* Form Header */}
-          <div className="mb-6 text-center">
-            <h2 className="text-2xl font-bold tracking-tight text-neutral-900">
-              Добре дошли отново
-            </h2>
+          <div className="mb-5">
+            <h1 className="text-xl font-bold tracking-tight text-neutral-900">
+              Влезте в EVTA AI
+            </h1>
             <p className="mt-2 text-sm text-neutral-600">
               Влезте в акаунта си, за да продължите
             </p>
@@ -130,13 +160,13 @@ export default function SignIn() {
             </AnimatePresence>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Имейл адрес</Label>
-              <input
+              <Label htmlFor="email">Имейл</Label>
+              <Input
                 id="email"
                 type="email"
                 placeholder="name@example.com"
                 autoComplete="email"
-                className="h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                className="h-12 w-full mt-1"
                 {...register("email")}
               />
               {formState.errors.email && (
@@ -147,28 +177,20 @@ export default function SignIn() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Парола</Label>
-                <Link
-                  href="/auth/reset-password"
-                  className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
-                >
-                  Забравена парола?
-                </Link>
-              </div>
-              <div className="relative">
-                <input
+              <Label htmlFor="password">Парола</Label>
+              <div className="relative mt-1">
+                <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  className="h-11 pr-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                  className="h-12 w-full mt-1"
                   {...register("password")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                   aria-label={showPassword ? "Скрий парола" : "Покажи парола"}
                 >
                   {showPassword ? (
@@ -185,15 +207,24 @@ export default function SignIn() {
               )}
             </div>
 
+            <div className="flex items-center justify-end">
+              <Link
+                href="/auth/reset-password"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Забравена парола?
+              </Link>
+            </div>
+
             <Button
               type="submit"
-              className="h-11 w-full"
+              className="h-12 w-full rounded-full text-base font-medium"
               disabled={isLoading || !formState.isValid}
             >
               {isLoading ? "Влизане..." : "Вход"}
             </Button>
 
-            <p className="text-center text-xs text-neutral-500 pt-2">
+            <p className="pt-4 text-center text-xs text-neutral-500">
               Продължавайки, вие се съгласявате с нашите{" "}
               <a href="/legal#tos" className="underline hover:text-neutral-700">
                 Общи условия
@@ -205,13 +236,14 @@ export default function SignIn() {
             </p>
           </form>
 
-          {/* Create Account Link */}
-          <div className="text-center mt-8 pt-6 border-t border-neutral-200">
-            <p className="text-sm text-neutral-600">
+          {/* Registration Link */}
+          <div className="mt-5">
+            <Separator className="mb-4" />
+            <p className="text-center text-sm text-neutral-600">
               Нямате регистрация?{" "}
               <Link
                 href="/auth/sign-up"
-                className="font-semibold text-neutral-900 hover:underline"
+                className="font-semibold text-primary hover:underline"
               >
                 Създайте акаунт
               </Link>

@@ -12,6 +12,6 @@ const ChatPage = dynamic(
   }
 );
 
-export default function ChatWithConversation() {
+export default function Chat() {
   return <ChatPage />;
 }

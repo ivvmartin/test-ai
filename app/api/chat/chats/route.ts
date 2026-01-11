@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * GET /api/chat/chats
  *
- * Returns the authenticated user's chats (up to 10 most recent)
+ * Returns the authenticated user's chats (up to 25 most recent)
  */
 export async function GET() {
   try {
@@ -16,21 +16,21 @@ export async function GET() {
     const supabase = await createClient();
 
     const { data, error } = await supabase
-      .from("conversations")
+      .from("chats")
       .select("*")
       .eq("user_id", user.userId)
       .order("updated_at", { ascending: false })
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
-      .limit(10);
+      .limit(25);
 
     if (error) {
-      console.error("Error fetching conversations:", error);
+      console.error("Error fetching chats:", error);
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: "Failed to fetch conversations",
+            message: "Failed to fetch chats",
             code: "DATABASE_ERROR",
           },
         },
@@ -39,7 +39,7 @@ export async function GET() {
     }
 
     // Transform to camelCase for frontend
-    const conversations = (data || []).map((conv) => ({
+    const chats = (data || []).map((conv) => ({
       id: conv.id,
       userId: conv.user_id,
       title: conv.title,
@@ -49,7 +49,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      data: conversations,
+      data: chats,
     });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: {
-            message: "Invalid conversation ID format",
+            message: "Invalid chat ID format",
             code: "INVALID_ID",
           },
         },
@@ -140,18 +140,18 @@ export async function POST(request: NextRequest) {
     }
 
     const { data, error } = await supabase
-      .from("conversations")
+      .from("chats")
       .insert(insertData)
       .select()
       .single();
 
     if (error) {
-      console.error("Error creating conversation:", error);
+      console.error("Error creating chat:", error);
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: "Failed to create conversation",
+            message: "Failed to create chat",
             code: "DATABASE_ERROR",
           },
         },
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const conversation = {
+    const chat = {
       id: data.id,
       userId: data.user_id,
       title: data.title,
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: conversation,
+        data: chat,
       },
       { status: 201 }
     );

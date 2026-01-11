@@ -1,8 +1,9 @@
 "use client";
 
 import { FileText, Shield } from "lucide-react";
-import { memo, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
+import { Link } from "@/lib/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +19,8 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@components/ui/sidebar";
-import { Link } from "@/lib/navigation";
+import { PrivacyPolicyContent } from "./components/PrivacyPolicyContent";
+import { TermsOfServiceContent } from "./components/TermsOfServiceContent";
 
 type SectionId = "tos" | "pp";
 
@@ -39,37 +41,40 @@ const navigationItems: NavItem[] = [
 ];
 
 const termsSubSections: SubSection[] = [
-  { id: "tos-service-description", title: "1. Описание на услугата" },
-  { id: "tos-user-obligations", title: "2. Задължения на потребителя" },
-  { id: "tos-intellectual-property", title: "3. Интелектуална собственост" },
-  { id: "tos-limitation-liability", title: "4. Ограничение на отговорността" },
-  { id: "tos-termination", title: "5. Прекратяване" },
+  { id: "tos-1", title: "1. Общи разпоредби" },
+  { id: "tos-2", title: "2. Описание на услугата" },
+  { id: "tos-3", title: "3. Регистрация и потребителски акаунт" },
+  { id: "tos-4", title: "4. Потребителски нива и лимити" },
+  { id: "tos-5", title: "5. Плащания и абонаменти" },
+  { id: "tos-6", title: "6. Използване на услугата" },
+  { id: "tos-7", title: "7. Интелектуална собственост" },
+  { id: "tos-8", title: "8. Отговорност и гаранции" },
+  { id: "tos-9", title: "9. Защита на личните данни" },
+  { id: "tos-10", title: "10. Прекратяване на услугата" },
+  { id: "tos-11", title: "11. Форсмажорни обстоятелства" },
+  { id: "tos-12", title: "12. Приложимо право и спорове" },
+  { id: "tos-13", title: "13. Общи разпоредби" },
+  { id: "tos-14", title: "14. Контакти" },
 ];
 
 const privacySubSections: SubSection[] = [
-  { id: "pp-information-collect", title: "1. Информация, която събираме" },
-  { id: "pp-use-information", title: "2. Как използваме вашата информация" },
-  { id: "pp-data-security", title: "3. Сигурност на данните" },
-  { id: "pp-information-sharing", title: "4. Споделяне на информация" },
-  { id: "pp-your-rights", title: "5. Вашите права" },
-  { id: "pp-changes-policy", title: "6. Промени в тази политика" },
+  { id: "pp-1", title: "1. Въведение" },
+  { id: "pp-2", title: "2. Администратор на лични данни" },
+  { id: "pp-3", title: "3. Какви лични данни събираме" },
+  { id: "pp-4", title: "4. За какво използваме личните данни" },
+  { id: "pp-5", title: "5. Важна информация за защита на поверителността" },
+  { id: "pp-6", title: "6. Споделяне на лични данни с трети лица" },
+  { id: "pp-7", title: "7. Срок на съхранение на личните данни" },
+  { id: "pp-8", title: "8. Сигурност на личните данни" },
+  { id: "pp-9", title: "9. Вашите права" },
+  { id: "pp-10", title: "10. Cookies и подобни технологии" },
+  { id: "pp-11", title: "11. Трансфер на данни извън ЕС/ЕИП" },
+  { id: "pp-12", title: "12. Специфични разпоредби за AI системата" },
+  { id: "pp-13", title: "13. Деца и непълнолетни" },
+  { id: "pp-14", title: "14. Промени в политиката за поверителност" },
+  { id: "pp-15", title: "15. Контакти за въпроси и заявки" },
+  { id: "pp-16", title: "16. Заключение" },
 ];
-
-interface SectionHeadingProps {
-  id: string;
-  children: React.ReactNode;
-}
-
-function SectionHeading({ id, children }: SectionHeadingProps) {
-  return (
-    <h2
-      id={id}
-      className="mb-4 mt-8 scroll-mt-24 text-2xl font-bold text-neutral-900 dark:text-white"
-    >
-      {children}
-    </h2>
-  );
-}
 
 export default function LegalPage() {
   return (
@@ -81,24 +86,29 @@ export default function LegalPage() {
 
 function LegalPageContent() {
   const [activeSection, setActiveSection] = useState<SectionId>("tos");
+  const [activeSubSection, setActiveSubSection] = useState<string>("");
+  const [isScrolling, setIsScrolling] = useState(false);
   const { isMobile, setOpenMobile } = useSidebar();
 
-  // 1. Handle hash changes and initial load
   useEffect(() => {
     const updateSectionFromHash = () => {
       const hash = window.location.hash.slice(1);
 
       if (!hash) {
         setActiveSection("tos");
+        setActiveSubSection("");
         return;
       }
 
       if (hash === "tos") {
         setActiveSection("tos");
+        setActiveSubSection("");
       } else if (hash === "pp") {
         setActiveSection("pp");
+        setActiveSubSection("");
       } else if (hash.startsWith("tos-")) {
         setActiveSection("tos");
+        setActiveSubSection(hash);
         const element = document.getElementById(hash);
         if (element) {
           setTimeout(() => {
@@ -107,6 +117,7 @@ function LegalPageContent() {
         }
       } else if (hash.startsWith("pp-")) {
         setActiveSection("pp");
+        setActiveSubSection(hash);
         const element = document.getElementById(hash);
         if (element) {
           setTimeout(() => {
@@ -116,33 +127,96 @@ function LegalPageContent() {
       }
     };
 
-    // 2. Run on mount
     updateSectionFromHash();
-
-    // 3. Listen for hash changes
     window.addEventListener("hashchange", updateSectionFromHash);
-
-    return () => {
+    return () =>
       window.removeEventListener("hashchange", updateSectionFromHash);
-    };
   }, []);
 
-  const handleSectionClick = (sectionId: SectionId) => {
-    // Update URL hash, which will trigger hashchange event and update state
-    window.location.hash = sectionId;
+  // Scroll spy: track visible sections and update URL
+  useEffect(() => {
+    const currentSubSections =
+      activeSection === "tos" ? termsSubSections : privacySubSections;
+    const currentSectionIds = currentSubSections.map((s) => s.id);
 
-    if (isMobile) {
-      setOpenMobile(false);
-    }
+    const observerOptions = {
+      root: null,
+      rootMargin: "-20% 0px -60% 0px",
+      threshold: 0,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      const visibleEntry = entries.find((entry) => entry.isIntersecting);
+
+      if (visibleEntry && !isScrolling) {
+        const sectionId = visibleEntry.target.id;
+        setActiveSubSection(sectionId);
+
+        if (window.location.hash.slice(1) !== sectionId) {
+          window.history.replaceState(null, "", `#${sectionId}`);
+        }
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      observerCallback,
+      observerOptions
+    );
+
+    currentSectionIds.forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) {
+        observer.observe(element);
+      }
+    });
+
+    // Handle bottom scroll - activate last section
+    const handleScroll = () => {
+      if (isScrolling) return;
+
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      // Check if scrolled to bottom (within 50px threshold)
+      if (scrollTop + windowHeight >= documentHeight - 50) {
+        const lastSubSection =
+          currentSubSections[currentSubSections.length - 1];
+        if (lastSubSection) {
+          setActiveSubSection(lastSubSection.id);
+          if (window.location.hash.slice(1) !== lastSubSection.id) {
+            window.history.replaceState(null, "", `#${lastSubSection.id}`);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isScrolling, activeSection]);
+
+  const handleSectionClick = (sectionId: SectionId) => {
+    setIsScrolling(true);
+    setActiveSection(sectionId);
+    setActiveSubSection("");
+
+    // Reset scroll position to top when switching main sections
+    window.scrollTo({ top: 0, behavior: "instant" });
+
+    window.history.replaceState(null, "", `#${sectionId}`);
+    if (isMobile) setOpenMobile(false);
+    setTimeout(() => setIsScrolling(false), 500);
   };
 
   const handleSubSectionClick = (subsectionId: string) => {
-    // Update URL hash, which will trigger hashchange event and scroll
+    setIsScrolling(true);
     window.location.hash = subsectionId;
-
-    if (isMobile) {
-      setOpenMobile(false);
-    }
+    if (isMobile) setOpenMobile(false);
+    setTimeout(() => setIsScrolling(false), 1000);
   };
 
   return (
@@ -159,7 +233,7 @@ function LegalPageContent() {
           </Link>
         </SidebarHeader>
 
-        <SidebarContent>
+        <SidebarContent className="pb-12">
           <SidebarGroup>
             <SidebarGroupLabel>Правна информация</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -183,18 +257,26 @@ function LegalPageContent() {
                       </SidebarMenuItem>
 
                       {isActive && (
-                        <div className="ml-6 mt-1 space-y-1 border-l border-neutral-200 pl-3 dark:border-neutral-800">
-                          {subsections.map((subsection) => (
-                            <button
-                              key={subsection.id}
-                              onClick={() =>
-                                handleSubSectionClick(subsection.id)
-                              }
-                              className="block w-full py-1.5 text-left text-xs text-neutral-600 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-                            >
-                              {subsection.title}
-                            </button>
-                          ))}
+                        <div className="ml-6 mt-1 space-y-1 border-l border-neutral-200 pl-3 pr-2 dark:border-neutral-800">
+                          {subsections.map((subsection) => {
+                            const isSubActive =
+                              activeSubSection === subsection.id;
+                            return (
+                              <button
+                                key={subsection.id}
+                                onClick={() =>
+                                  handleSubSectionClick(subsection.id)
+                                }
+                                className={`block w-full py-1.5 pr-2 text-left text-xs transition-colors break-words ${
+                                  isSubActive
+                                    ? "font-medium text-neutral-900 dark:text-white"
+                                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                                }`}
+                              >
+                                {subsection.title}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -215,6 +297,7 @@ function LegalPageContent() {
             </span>
           </div>
         </header>
+
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-4xl px-8 py-12">
             <ContentSection activeSection={activeSection} />
@@ -225,169 +308,36 @@ function LegalPageContent() {
   );
 }
 
+interface SectionHeadingProps {
+  id: string;
+  children: React.ReactNode;
+}
+
+export function SectionHeading({ id, children }: SectionHeadingProps) {
+  return (
+    <h2
+      id={id}
+      className="mb-4 mt-8 scroll-mt-24 text-2xl font-bold text-neutral-900 dark:text-white"
+    >
+      {children}
+    </h2>
+  );
+}
+
+export function SubHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="mb-2 mt-5 text-base font-semibold text-neutral-900 dark:text-white">
+      {children}
+    </h3>
+  );
+}
+
 interface ContentSectionProps {
   activeSection: SectionId;
 }
 
-const TermsOfServiceContent = memo(() => (
-  <div>
-    <h1 className="mb-3 text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">
-      Terms of Service
-    </h1>
-    <p className="mb-8 text-sm text-neutral-600 dark:text-neutral-400">
-      Last updated: December 16, 2025
-    </p>
-
-    <div className="prose prose-neutral max-w-none dark:prose-invert">
-      <p className="text-neutral-700 dark:text-neutral-300">
-        Welcome to EVTA Consult. By accessing and using our AI-powered
-        consulting platform, you agree to be bound by these Terms of Service.
-        Please read them carefully.
-      </p>
-
-      <SectionHeading id="tos-service-description">
-        1. Service Description
-      </SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        EVTA Consult provides AI-powered business consulting services, including
-        strategic planning, market analysis, and operational optimization. Our
-        platform leverages advanced artificial intelligence to deliver
-        personalized insights and recommendations tailored to your business
-        needs.
-      </p>
-
-      <SectionHeading id="tos-user-obligations">
-        2. User Obligations
-      </SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        You agree to provide accurate and complete information when using our
-        services. You are responsible for maintaining the confidentiality of
-        your account credentials and for all activities that occur under your
-        account. You must notify us immediately of any unauthorized access or
-        security breaches.
-      </p>
-
-      <SectionHeading id="tos-intellectual-property">
-        3. Intellectual Property
-      </SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        All content, features, and functionality of the EVTA Consult platform,
-        including but not limited to text, graphics, logos, and software, are
-        owned by EVTA Consult and protected by international copyright,
-        trademark, and other intellectual property laws.
-      </p>
-
-      <SectionHeading id="tos-limitation-liability">
-        4. Limitation of Liability
-      </SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        EVTA Consult provides consulting recommendations based on AI analysis
-        and should not be considered as professional financial, legal, or tax
-        advice. While we strive for accuracy, we do not guarantee specific
-        outcomes or results from implementing our recommendations.
-      </p>
-
-      <SectionHeading id="tos-termination">5. Termination</SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        We reserve the right to terminate or suspend your access to our services
-        at any time, without prior notice, for conduct that we believe violates
-        these Terms of Service or is harmful to other users, us, or third
-        parties, or for any other reason.
-      </p>
-    </div>
-  </div>
-));
-
-TermsOfServiceContent.displayName = "TermsOfServiceContent";
-
-const PrivacyPolicyContent = memo(() => (
-  <div>
-    <h1 className="mb-3 text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">
-      Privacy Policy
-    </h1>
-    <p className="mb-8 text-sm text-neutral-600 dark:text-neutral-400">
-      Last updated: December 16, 2025
-    </p>
-
-    <div className="prose prose-neutral max-w-none dark:prose-invert">
-      <p className="text-neutral-700 dark:text-neutral-300">
-        At EVTA Consult, we take your privacy seriously. This Privacy Policy
-        explains how we collect, use, disclose, and safeguard your information
-        when you use our AI consulting platform.
-      </p>
-
-      <SectionHeading id="pp-information-collect">
-        1. Information We Collect
-      </SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        We collect information that you provide directly to us, including your
-        name, email address, company information, and business data that you
-        input for analysis. We also automatically collect certain information
-        about your device and how you interact with our platform, such as IP
-        address, browser type, and usage patterns.
-      </p>
-
-      <SectionHeading id="pp-use-information">
-        2. How We Use Your Information
-      </SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        We use the information we collect to provide, maintain, and improve our
-        services, including training and refining our AI models. We also use
-        your information to communicate with you, respond to your inquiries, and
-        send you technical notices and support messages.
-      </p>
-
-      <SectionHeading id="pp-data-security">3. Data Security</SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        We implement industry-standard security measures to protect your
-        personal information from unauthorized access, disclosure, alteration,
-        and destruction. This includes encryption of data in transit and at
-        rest, regular security audits, and strict access controls for our
-        personnel.
-      </p>
-
-      <SectionHeading id="pp-information-sharing">
-        4. Information Sharing
-      </SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        We do not sell, trade, or rent your personal information to third
-        parties. We may share your information with trusted service providers
-        who assist us in operating our platform, conducting our business, or
-        serving our users, provided they agree to keep this information
-        confidential.
-      </p>
-
-      <SectionHeading id="pp-your-rights">5. Your Rights</SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        You have the right to access, update, or delete your personal
-        information at any time. You may also opt out of receiving marketing
-        communications from us. To exercise these rights, please contact us at
-        privacy@evtaconsult.com.
-      </p>
-
-      <SectionHeading id="pp-changes-policy">
-        6. Changes to This Policy
-      </SectionHeading>
-      <p className="text-neutral-700 dark:text-neutral-300">
-        We may update this Privacy Policy from time to time. We will notify you
-        of any changes by posting the new Privacy Policy on this page and
-        updating the &quot;Last updated&quot; date. You are advised to review
-        this Privacy Policy periodically for any changes.
-      </p>
-    </div>
-  </div>
-));
-
-PrivacyPolicyContent.displayName = "PrivacyPolicyContent";
-
 function ContentSection({ activeSection }: ContentSectionProps) {
-  if (activeSection === "tos") {
-    return <TermsOfServiceContent />;
-  }
-
-  if (activeSection === "pp") {
-    return <PrivacyPolicyContent />;
-  }
-
+  if (activeSection === "tos") return <TermsOfServiceContent />;
+  if (activeSection === "pp") return <PrivacyPolicyContent />;
   return null;
 }

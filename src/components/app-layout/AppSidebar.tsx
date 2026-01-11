@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { useLocation, useNavigate } from "@/lib/navigation";
+import { PlansDialog } from "@components/PlansDialog";
 import { Button } from "@components/ui/button";
 import {
   Sidebar,
@@ -27,14 +28,13 @@ import {
 } from "@components/ui/tooltip";
 import { useCreateCheckoutSession } from "@utils/billing-queries";
 import {
-  useDeleteConversationMutation,
-  useExportConversationMutation,
+  useDeleteChatMutation,
+  useExportChatMutation,
 } from "@utils/chat-mutations";
-import { useConversationsQuery } from "@utils/chat-queries";
+import { useChatsQuery } from "@utils/chat-queries";
 import { useUsageSnapshot } from "@utils/usage-queries";
-
-import { ConversationList } from "./components/ConversationList";
-import { DeleteConversationDialog } from "./components/DeleteConversationDialog";
+import { ChatList } from "./components/ChatList";
+import { DeleteChatDialog } from "./components/DeleteChatDialog";
 import { UpgradeCTA } from "./components/UpgradeCTA";
 
 export function AppSidebar() {
@@ -43,24 +43,25 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile } = useSidebar();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [conversationToDelete, setConversationToDelete] = useState<{
+  const [plansDialogOpen, setPlansDialogOpen] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<{
     id: string;
     title: string;
   } | null>(null);
 
-  const { data: conversations = [], isLoading } = useConversationsQuery();
+  const { data: chats = [], isLoading } = useChatsQuery();
   const { data: usage } = useUsageSnapshot();
 
   const checkoutMutation = useCreateCheckoutSession();
-  const exportConversationMutation = useExportConversationMutation();
-  const deleteConversationMutation = useDeleteConversationMutation({
+  const exportChatMutation = useExportChatMutation();
+  const deleteChatMutation = useDeleteChatMutation({
     onSuccess: () => {
       toast.success("Казусът е изтрит успешно");
       setDeleteDialogOpen(false);
-      setConversationToDelete(null);
+      setChatToDelete(null);
     },
     onError: (error) => {
-      console.error("Failed to delete conversation:", error);
+      console.error("Failed to delete chat:", error);
       toast.error("Неуспешно изтриване на казуса. Моля, опитайте отново");
     },
   });
@@ -72,31 +73,31 @@ export function AppSidebar() {
     }
   };
 
-  const handleDeleteConversation = (id: string, e?: React.MouseEvent) => {
+  const handleDeleteChat = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
 
-    const conversation = conversations.find((c) => c.id === id);
-    setConversationToDelete({
+    const chat = chats.find((c) => c.id === id);
+    setChatToDelete({
       id,
-      title: conversation?.title || "Нов казус",
+      title: chat?.title || "Нов казус",
     });
     setDeleteDialogOpen(true);
   };
 
-  const confirmDeleteConversation = () => {
-    if (!conversationToDelete) return;
+  const confirmDeleteChat = () => {
+    if (!chatToDelete) return;
 
-    if (location.pathname === `/app/chat/${conversationToDelete.id}`) {
+    if (location.pathname === `/app/chat/${chatToDelete.id}`) {
       navigate("/app/chat");
     }
 
-    deleteConversationMutation.mutate(conversationToDelete.id);
+    deleteChatMutation.mutate(chatToDelete.id);
   };
 
-  const handleExportConversation = (id: string, e?: React.MouseEvent) => {
+  const handleExportChat = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
 
-    toast.promise(exportConversationMutation.mutateAsync(id), {
+    toast.promise(exportChatMutation.mutateAsync(id), {
       loading: "Експортиране на казуса...",
       success: "Казусът е експортиран успешно",
       error: (err) =>
@@ -106,14 +107,18 @@ export function AppSidebar() {
     });
   };
 
-  const handleConversationClick = (id: string) => {
+  const handleChatClick = (id: string) => {
     navigate(`/app/chat/${id}`);
     if (isMobile) {
       setOpenMobile(false);
     }
   };
 
-  const handleUpgrade = () => {
+  const handleOpenPlansDialog = () => {
+    setPlansDialogOpen(true);
+  };
+
+  const handleSelectPremium = () => {
     checkoutMutation.mutate("PREMIUM", {
       onError: (error) => {
         toast.error(
@@ -125,8 +130,9 @@ export function AppSidebar() {
     });
   };
 
-  const isFreeUser = usage?.planKey === "FREE";
-  const activeConversationId = location.pathname.startsWith("/app/chat/")
+  const isFreeUser =
+    usage?.planKey === "TRIAL" || usage?.planKey === "FREE_INTERNAL";
+  const activeChatId = location.pathname.startsWith("/app/chat/")
     ? location.pathname.split("/app/chat/")[1]
     : null;
 
@@ -148,10 +154,7 @@ export function AppSidebar() {
 
       <SidebarContent className="p-1">
         {isFreeUser && (
-          <UpgradeCTA
-            onUpgrade={handleUpgrade}
-            isPending={checkoutMutation.isPending}
-          />
+          <UpgradeCTA onUpgrade={handleOpenPlansDialog} isPending={false} />
         )}
 
         <SidebarGroup>
@@ -177,7 +180,7 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <div className="flex items-center justify-between">
-            <SidebarGroupLabel>Казуси (последните 10)</SidebarGroupLabel>
+            <SidebarGroupLabel>Казуси (последните 25)</SidebarGroupLabel>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -196,14 +199,14 @@ export function AppSidebar() {
           </div>
 
           <SidebarGroupContent>
-            <ConversationList
-              conversations={conversations}
+            <ChatList
+              chats={chats}
               isLoading={isLoading}
-              activeConversationId={activeConversationId}
-              onConversationClick={handleConversationClick}
-              onExport={handleExportConversation}
-              onDelete={handleDeleteConversation}
-              isDeleting={deleteConversationMutation.isPending}
+              activeChatId={activeChatId}
+              onChatClick={handleChatClick}
+              onExport={handleExportChat}
+              onDelete={handleDeleteChat}
+              isDeleting={deleteChatMutation.isPending}
             />
           </SidebarGroupContent>
         </SidebarGroup>
@@ -234,12 +237,19 @@ export function AppSidebar() {
         </div>
       </SidebarFooter>
 
-      <DeleteConversationDialog
+      <DeleteChatDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        conversationTitle={conversationToDelete?.title || ""}
-        onConfirm={confirmDeleteConversation}
-        isPending={deleteConversationMutation.isPending}
+        chatTitle={chatToDelete?.title || ""}
+        onConfirm={confirmDeleteChat}
+        isPending={deleteChatMutation.isPending}
+      />
+
+      <PlansDialog
+        open={plansDialogOpen}
+        onOpenChange={setPlansDialogOpen}
+        onSelectPremium={handleSelectPremium}
+        isPending={checkoutMutation.isPending}
       />
     </Sidebar>
   );

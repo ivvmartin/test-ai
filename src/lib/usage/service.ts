@@ -6,6 +6,7 @@ import {
   ConsumeUsageResult,
   EntitlementResult,
   getPeriodInfo,
+  getTrialPeriodInfo,
   PlanKey,
   PLANS,
   UsageCounter,
@@ -24,7 +25,7 @@ export class UsageService {
    * Priority order:
    * 1. User-level override (planOverride + optional monthlyLimitOverride)
    * 2. Active subscription (checks subscription.status === 'active')
-   * 3. Default FREE plan
+   * 3. Default TRIAL plan
    */
   async resolveEntitlement(userId: string): Promise<EntitlementResult> {
     // 1. Check for user-level override in user metadata
@@ -70,10 +71,10 @@ export class UsageService {
       };
     }
 
-    // 3. Default to FREE plan
+    // 3. Default to TRIAL plan
     return {
-      planKey: "FREE",
-      monthlyLimit: PLANS.FREE.monthlyLimit,
+      planKey: "TRIAL",
+      monthlyLimit: PLANS.TRIAL.monthlyLimit,
       source: "default_free",
     };
   }
@@ -102,7 +103,11 @@ export class UsageService {
     }
 
     const userCreatedAt = new Date(user.user.created_at);
-    const period = getPeriodInfo(userCreatedAt, dateNow);
+
+    // Use trial period for TRIAL plan, monthly period for others
+    const period = PLANS[entitlement.planKey].isTrialPlan
+      ? getTrialPeriodInfo(userCreatedAt)
+      : getPeriodInfo(userCreatedAt, dateNow);
 
     const { data: counter } = await this.supabase
       .from("usage_counters")
@@ -162,7 +167,11 @@ export class UsageService {
     }
 
     const userCreatedAt = new Date(user.user.created_at);
-    const period = getPeriodInfo(userCreatedAt);
+
+    // Use trial period for TRIAL plan, monthly period for others
+    const period = PLANS[entitlement.planKey].isTrialPlan
+      ? getTrialPeriodInfo(userCreatedAt)
+      : getPeriodInfo(userCreatedAt);
 
     // Use the atomic consume_usage function
     const { data, error } = await this.supabase.rpc("consume_usage", {

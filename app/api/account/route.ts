@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/auth/requireUser";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimiter, RATE_LIMITS, getClientIp } from "@/lib/security";
+import { StripeBillingService } from "@/lib/billing";
+import { auditLogger } from "@/lib/audit";
 
 /**
  * DELETE /api/account
@@ -90,7 +92,49 @@ export async function DELETE(request: NextRequest) {
     // 6. Use admin client to delete user data
     const adminClient = createAdminClient();
 
-    // 7. Delete usage counters
+    // 7. Check for active subscription and cancel it in Stripe
+    const { data: subscription } = await adminClient
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    // 7.1. Log account deletion to audit log BEFORE deletion
+    const userAgent = request.headers.get("user-agent") || undefined;
+    await auditLogger.logAccountDeletion(
+      userId,
+      userData.user.email || "unknown",
+      clientIp,
+      userAgent,
+      {
+        had_subscription: !!subscription,
+        subscription_status: subscription?.status || null,
+        stripe_customer_id: subscription?.stripe_customer_id || null,
+      }
+    );
+
+    if (
+      subscription?.stripe_subscription_id &&
+      (subscription.status === "active" || subscription.status === "trialing")
+    ) {
+      try {
+        const stripeService = new StripeBillingService();
+
+        // Cancel the subscription immediately in Stripe
+        await stripeService.cancelSubscription(
+          subscription.stripe_subscription_id
+        );
+        console.log(
+          `Canceled Stripe subscription: ${subscription.stripe_subscription_id}`
+        );
+      } catch (stripeError) {
+        console.error("Error canceling Stripe subscription:", stripeError);
+        // Continue with account deletion even if Stripe cancellation fails
+        // The subscription will be cleaned up via webhook or manual intervention
+      }
+    }
+
+    // 8. Delete usage counters
     const { error: usageError } = await adminClient
       .from("usage_counters")
       .delete()
@@ -100,7 +144,7 @@ export async function DELETE(request: NextRequest) {
       console.error("Error deleting usage counters:", usageError);
     }
 
-    // 7. Delete subscriptions
+    // 9. Delete subscriptions from database
     const { error: subscriptionError } = await adminClient
       .from("subscriptions")
       .delete()
@@ -110,7 +154,7 @@ export async function DELETE(request: NextRequest) {
       console.error("Error deleting subscriptions:", subscriptionError);
     }
 
-    // 8. Delete the auth user (this is the final step)
+    // 10. Delete the auth user (this is the final step)
     const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(
       userId
     );

@@ -103,17 +103,18 @@ Returns the current user's plan information with essential data only.
 
 **Response Fields:**
 
-- `plan` - Plan key: `FREE`, `PAID`, or `INTERNAL`
-- `monthlyLimit` - Total messages allowed per month
+- `plan` - Plan key: `TRIAL`, `PAID`, `FREE_INTERNAL`, or `INTERNAL`
+- `monthlyLimit` - Total messages allowed per period
 - `balance` - Remaining messages available
 - `periodStart` - Billing period start (ISO 8601)
 - `periodEnd` - Billing period end (ISO 8601)
 
 **Plan Keys:**
 
-- `FREE` - Free plan (10 messages/month)
+- `TRIAL` - Trial plan (15 messages for 7 days)
 - `PAID` - Premium plan (50 messages/month)
-- `INTERNAL` - Internal/admin plan (unlimited)
+- `FREE_INTERNAL` - Internal free plan (25 messages/month)
+- `INTERNAL` - Internal/admin plan (1000 messages/month)
 
 **Error Responses:**
 

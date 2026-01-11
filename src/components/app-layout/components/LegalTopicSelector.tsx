@@ -8,7 +8,11 @@ import {
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu";
 
-export type LegalTopic = "ДДС" | "ЗКПО" | "ЗДДФЛ" | "ДОПК";
+export type LegalTopic =
+  | "ДДС"
+  | "Корпоративен данък"
+  | "Данък върху доходите"
+  | "Данъчен процес";
 
 interface LegalTopicOption {
   value: LegalTopic;
@@ -20,13 +24,16 @@ interface LegalTopicOption {
 const LEGAL_TOPIC_OPTIONS: LegalTopicOption[] = [
   { value: "ДДС", label: "ДДС", disabled: false },
   {
-    value: "ЗКПО",
-    label: "ЗКПО",
-    subtitle: "Корпоративен данък",
+    value: "Корпоративен данък",
+    label: "Корпоративен данък",
     disabled: true,
   },
-  { value: "ЗДДФЛ", label: "ЗДДФЛ", disabled: true },
-  { value: "ДОПК", label: "ДОПК", disabled: true },
+  {
+    value: "Данък върху доходите",
+    label: "Данък върху доходите",
+    disabled: true,
+  },
+  { value: "Данъчен процес", label: "Данъчен процес", disabled: true },
 ];
 
 interface LegalTopicSelectorProps {
@@ -87,7 +94,7 @@ export function LegalTopicSelector({
             )}
           >
             <div className="flex flex-col">
-              <span className="text-sm md:text-[15px]">{option.label}</span>
+              <span className="text-sm md:text-[13px]">{option.label}</span>
               {option.subtitle && (
                 <span className="text-[11px] md:text-xs text-muted-foreground">
                   {option.subtitle}
