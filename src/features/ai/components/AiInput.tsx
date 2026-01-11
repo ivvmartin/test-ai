@@ -72,15 +72,16 @@ export function AiInput({
       <div className="relative mx-auto w-full max-w-4xl rounded-2xl bg-muted/50 shadow-lg">
         <Textarea
           ref={textareaRef}
-          id="ai-input-06"
+          id="ai-input"
           enterKeyHint="send"
           placeholder={getPlaceholder()}
           className={cn(
-            "bg-background text-foreground placeholder:text-muted-foreground/70 w-full border border-input py-4 pr-16 pl-5 leading-relaxed",
+            "bg-background text-foreground placeholder:text-muted-foreground/70 w-full border border-input pr-16 pl-5",
             "resize-none min-h-[56px] overflow-y-auto",
             "shadow-sm",
             "focus-visible:ring-0 focus-visible:border-input",
-            "placeholder:text-xs sm:placeholder:text-sm",
+            "text-xs sm:text-sm placeholder:text-xs sm:placeholder:text-sm",
+            "leading-relaxed py-[18px]",
             "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
             hasWarningBanner ? "rounded-b-2xl rounded-t-none" : "rounded-2xl",
             disabled && "cursor-not-allowed opacity-60"

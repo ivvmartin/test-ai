@@ -133,7 +133,7 @@ function LegalPageContent() {
       window.removeEventListener("hashchange", updateSectionFromHash);
   }, []);
 
-  // Scroll spy: track visible sections and update URL
+  // Scroll spy: track visible sections for sidebar highlighting
   useEffect(() => {
     const currentSubSections =
       activeSection === "tos" ? termsSubSections : privacySubSections;
@@ -151,10 +151,6 @@ function LegalPageContent() {
       if (visibleEntry && !isScrolling) {
         const sectionId = visibleEntry.target.id;
         setActiveSubSection(sectionId);
-
-        if (window.location.hash.slice(1) !== sectionId) {
-          window.history.replaceState(null, "", `#${sectionId}`);
-        }
       }
     };
 
@@ -184,9 +180,6 @@ function LegalPageContent() {
           currentSubSections[currentSubSections.length - 1];
         if (lastSubSection) {
           setActiveSubSection(lastSubSection.id);
-          if (window.location.hash.slice(1) !== lastSubSection.id) {
-            window.history.replaceState(null, "", `#${lastSubSection.id}`);
-          }
         }
       }
     };
