@@ -114,17 +114,15 @@ export default function SignIn() {
         <div className="mx-auto w-full max-w-md">
           {/* Brand Logo and Slogan */}
           <div className="mb-6">
-            <div className="mb-2 flex items-center gap-3">
-              <div className="relative h-24 w-24 flex-shrink-0">
-                <Image
-                  src="/brand-light.png"
-                  alt="EVTA AI Logo"
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              </div>
-
+            <div className="mb-2 flex items-center gap-3 mb-12">
+              <Image
+                src="/brand-light.png"
+                alt="EVTA AI Logo"
+                width={96}
+                height={96}
+                className="flex-shrink-0 object-contain"
+                priority
+              />
               <div className="h-8 w-px bg-neutral-300" />
               <span className="text-sm font-semibold text-neutral-700">
                 Вашият данъчен партньор
