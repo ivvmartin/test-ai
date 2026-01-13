@@ -74,12 +74,24 @@ export class StripeBillingService {
         },
       };
 
-      // Use existing customer or create new one
-      if (existingCustomerId) {
-        sessionParams.customer = existingCustomerId;
-      } else {
-        sessionParams.customer_email = userEmail;
+      // Create customer first if needed (required for preferred_locales per Stripe docs)
+      // See: https://docs.stripe.com/api/customers/create?api-version=2025-12-15.preview&rds=1
+      let customerId = existingCustomerId;
+      if (!customerId) {
+        const customer = await this.stripe.customers.create({
+          email: userEmail,
+          preferred_locales: ["bg"],
+          metadata: { userId },
+        });
+        customerId = customer.id;
       }
+
+      sessionParams.customer = customerId;
+      sessionParams.billing_address_collection = "required";
+      sessionParams.customer_update = {
+        address: "auto",
+        name: "auto",
+      };
 
       const session = await this.stripe.checkout.sessions.create(sessionParams);
 
