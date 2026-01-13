@@ -193,14 +193,22 @@ export function UsageIndicator({
             <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
               <p className="text-sm font-medium text-destructive">
-                Месечният лимит е достигнат
+                {usage.planKey === "TRIAL"
+                  ? "Лимитът на пробния период е достигнат"
+                  : "Месечният лимит е достигнат"}
               </p>
               <p className="text-xs text-muted-foreground">
-                Надградете плана си или изчакайте до{" "}
-                {new Date(usage.periodEnd).toLocaleDateString("bg-BG", {
-                  month: "short",
-                  day: "numeric",
-                })}
+                {usage.planKey === "TRIAL" ? (
+                  "Надградете плана си, за да продължите да използвате услугата"
+                ) : (
+                  <>
+                    Надградете плана си или изчакайте до{" "}
+                    {new Date(usage.periodEnd).toLocaleDateString("bg-BG", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </>
+                )}
               </p>
             </div>
           </motion.div>

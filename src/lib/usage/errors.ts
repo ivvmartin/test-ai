@@ -9,7 +9,7 @@ export class LimitExceededError extends Error {
   public readonly code = "LIMIT_EXCEEDED";
 
   constructor(
-    message: string = "Monthly usage limit has been reached. Upgrade your plan or wait for the next billing period.",
+    message: string = "Usage limit has been reached. Please upgrade your plan.",
     public readonly used: number = 0,
     public readonly limit: number = 0,
     public readonly planKey: string = "TRIAL"
@@ -25,9 +25,17 @@ export class LimitExceededError extends Error {
 
   /**
    * Create a formatted error message with usage details
+   * For TRIAL plan: no renewal, must upgrade
+   * For other plans: can wait for next billing period
    */
-  static createMessage(used: number, limit: number): string {
-    return `Monthly usage limit of ${limit} messages has been reached (used: ${used}). Upgrade your plan or wait for the next billing period.`;
+  static createMessage(used: number, limit: number, planKey?: string): string {
+    const baseMessage = `Usage limit of ${limit} messages has been reached (used: ${used}).`;
+
+    if (planKey === "TRIAL") {
+      return `${baseMessage} Please upgrade your plan to continue.`;
+    }
+
+    return `${baseMessage} Upgrade your plan or wait for the next billing period.`;
   }
 }
 

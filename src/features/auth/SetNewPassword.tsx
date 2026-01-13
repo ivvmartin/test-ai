@@ -53,7 +53,7 @@ export default function SetNewPassword() {
       }
 
       toast.success(
-        "Паролата е нулирана успешно! Вече можете да влезете с новата си парола"
+        "Паролата ви беше успешно нулирана. Пренасочваме ви към вашия акаунт..."
       );
       setTimeout(() => {
         navigate("/auth/sign-in");

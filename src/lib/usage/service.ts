@@ -190,7 +190,11 @@ export class UsageService {
       // Get current usage to provide accurate error message
       const snapshot = await this.getUsageSnapshot(userId);
       throw new LimitExceededError(
-        LimitExceededError.createMessage(snapshot.used, snapshot.monthlyLimit),
+        LimitExceededError.createMessage(
+          snapshot.used,
+          snapshot.monthlyLimit,
+          snapshot.planKey
+        ),
         snapshot.used,
         snapshot.monthlyLimit,
         snapshot.planKey
@@ -222,7 +226,11 @@ export class UsageService {
 
     if (snapshot.used >= snapshot.monthlyLimit) {
       throw new LimitExceededError(
-        LimitExceededError.createMessage(snapshot.used, snapshot.monthlyLimit),
+        LimitExceededError.createMessage(
+          snapshot.used,
+          snapshot.monthlyLimit,
+          snapshot.planKey
+        ),
         snapshot.used,
         snapshot.monthlyLimit,
         snapshot.planKey
