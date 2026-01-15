@@ -1,4 +1,4 @@
 export { geminiService } from "./gemini-service";
-export { vatContentService } from "./vat-content-service";
+export { VAT_ACT_TEXT, VAT_REGULATIONS_TEXT } from "./vat-act";
 export * from "./types";
 export * from "./prompts";

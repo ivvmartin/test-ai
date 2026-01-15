@@ -1,5 +1,6 @@
 import "server-only";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
+import { GoogleGenAI } from "@google/genai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { env } from "@/lib/env";
 import { JailbreakAttemptError } from "./errors";
@@ -8,13 +9,13 @@ import { JailbreakAttemptError } from "./errors";
  * Guardrail Service
  *
  * Uses AI to detect and prevent jailbreak attempts, prompt injections, and malicious content
- * before processing user queries through the AI pipeline.
+ * before processing user queries through the AI pipeline
  *
  * SERVER-ONLY - Never import this in client components
  */
 class GuardrailService {
   private supabase = createAdminClient();
-  private genAI: GoogleGenerativeAI;
+  private ai: GoogleGenAI;
 
   constructor() {
     if (!env.GOOGLE_GEMINI_API_KEY) {
@@ -22,7 +23,7 @@ class GuardrailService {
         "GOOGLE_GEMINI_API_KEY is not set. Guardrail service cannot be initialized."
       );
     }
-    this.genAI = new GoogleGenerativeAI(env.GOOGLE_GEMINI_API_KEY);
+    this.ai = new GoogleGenAI({ apiKey: env.GOOGLE_GEMINI_API_KEY });
   }
 
   /**
@@ -63,17 +64,16 @@ Respond ONLY with valid JSON in this exact format:
 Be strict but not overly sensitive. Legitimate questions about VAT law, taxes, or legal matters should be marked as safe.`;
 
     try {
-      const model = this.genAI.getGenerativeModel({
+      const response = await this.ai.models.generateContent({
         model: modelName,
-        generationConfig: {
+        contents: prompt,
+        config: {
           temperature: 0.1,
           responseMimeType: "application/json",
         },
       });
 
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
+      const text = response.text?.trim() ?? "";
       const duration = Date.now() - startTime;
 
       console.log("✅ [Guardrail AI] Analysis complete", {

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 
 import type { ChatMessage } from "@/lib/ai";
-import { buildFinalPrompt, geminiService, vatContentService } from "@/lib/ai";
+import { geminiService } from "@/lib/ai";
 import { UnauthorizedError } from "@/lib/auth/errors";
 import { requireUser } from "@/lib/auth/requireUser";
 import { guardrailService, JailbreakAttemptError } from "@/lib/guardrail";
@@ -18,11 +18,13 @@ import { LimitExceededError, usageService } from "@/lib/usage";
  * POST /api/chat/chats/[id]/messages
  *
  * Adds a user message to a chat and generates an AI response.
- * Implements the 4-step AI flow:
+ * Implements the 3-step AI flow:
  * 0. Guardrail Validation - Check for jailbreak/malicious attempts
- * 1. Query Analysis - Refine question and extract keywords
- * 2. Context Retrieval - Find relevant VAT articles
- * 3. Response Generation - Stream AI response with context
+ * 1. Query Analysis - Refine question
+ * 2. Response Generation - Stream AI response with full VAT context
+ *
+ * The response generation uses implicit caching by prepending the full
+ * ЗДДС and ППЗДДС texts as a prefix to every request.
  *
  * Request Body:
  * {
@@ -279,7 +281,7 @@ export async function POST(
 
           // STEP 1: Analyze Query
           console.log(
-            "🚀 [API] Starting 3-step AI flow (guardrail already passed)..."
+            "🚀 [API] Starting 2-step AI flow (guardrail already passed)..."
           );
           const analysisResult = await geminiService.analyzeQuery(
             userMessage,
@@ -288,37 +290,21 @@ export async function POST(
 
           console.log("📋 [API] Analysis complete:", {
             refinedQuestion: analysisResult.refined_question.substring(0, 100),
-            keywordsCount: analysisResult.search_keywords.length,
-            keywords: analysisResult.search_keywords,
           });
 
-          // STEP 2: Retrieve Context
-          console.log("🔍 [API] Starting context retrieval...");
-          const contextResult = await vatContentService.findRelevantContent(
-            analysisResult.search_keywords
-          );
-
-          console.log("📊 [API] Context retrieval complete:", {
-            hasActContext: !!contextResult.actContext,
-            hasRegulationsContext: !!contextResult.regulationsContext,
-          });
-
-          // STEP 3: Generate Response (streaming)
-          console.log("📝 [API] Building final prompt...");
-          const finalPrompt = buildFinalPrompt(
-            analysisResult.refined_question,
-            contextResult.actContext,
-            contextResult.regulationsContext
+          // STEP 2: Generate Response with full VAT context
+          console.log(
+            "📝 [API] Starting response generation with full VAT context..."
           );
 
           let fullResponse = "";
           let tokenUsage = null;
 
-          // Pass chatHistory without the current message
-          // The service will add finalPrompt as the new user message
+          // Pass chatHistory and refined question
+          // The service will prepend the full VAT law context for implicit caching
           for await (const chunk of geminiService.generateResponseStream(
             chatHistory,
-            finalPrompt
+            analysisResult.refined_question
           )) {
             if (chunk.text) {
               fullResponse += chunk.text;

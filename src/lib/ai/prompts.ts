@@ -34,7 +34,6 @@ Here is the user's current question:
 </user_question>
 
 # CRITICAL RULES:
-
 - DO NOT change the meaning or intent of the user's question
 - DO NOT add legal interpretations, article references, or case explanations
 - DO NOT specify how VAT articles should be applied
@@ -45,11 +44,6 @@ Here is the user's current question:
 - If the question is a follow-up, incorporate relevant context from conversation history
 
 # YOUR TASKS:
-
-You must complete two tasks. 
-
-**Part 1: Normalize and Reformulate the Question**
-
 Rewrite the user's question to make it clearer and more suitable for legal search by:
 - Replacing colloquial or informal language with proper legal terminology from ЗДДС
 - Using precise legal terms and concepts as they appear in the VAT Act
@@ -58,29 +52,11 @@ Rewrite the user's question to make it clearer and more suitable for legal searc
 - Preserving ALL specific details mentioned by the user (time periods, dates, amounts, goods, services, places, etc.)
 - Maintaining the user's original intent and scope
 
-**Part 2: Generate Keywords for Legal Search**
-
-Extract and generate a focused list of keywords that would be most effective for word-for-word search in the VAT Act text. These keywords should include:
-- Key legal terms and concepts from the VAT Act that need to be clarified to answer the question
-- Specific procedural or substantive legal terms
-- Related legal concepts that might appear in relevant law sections
-- Relevant article numbers or sections ONLY if explicitly implied by the question
-
-Important keyword guidelines:
-- Use only terms that actually appear in the VAT Act text
-- DO NOT include abbreviations not used in the VAT Act (e.g., avoid "ЗДДС", "ДДС")
-- DO NOT include generic terms like "данък върху добавената стойност"
-- Focus on specific, searchable legal terminology
-- Include 5-10 keywords maximum
-- Keywords should be in Bulgarian
-- Each keyword should be a distinct term or short phrase (1-3 words)
-
 Provide your final output as a valid JSON object with this exact structure:
 {
-  "refined_question": "Your reformulated question in Bulgarian here",
-  "search_keywords": ["keyword1", "keyword2", "keyword3", ...]
+  "refined_question": "Your reformulated question in Bulgarian here"
 }
-Ensure the JSON is properly formatted with correct quotation marks and commas.`;
+Ensure the JSON is properly formatted!`;
 }
 
 export const TITLE_GENERATION_PROMPT = `
